@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useCopilot } from "@/lib/copilot-store";
 import { alerts, initialChat, type ChatMessage } from "@/lib/mock-data";
-import { Send, Mic, ChevronRight, Terminal, FileText, Network, Image as ImgIcon } from "lucide-react";
+import { Send, Mic, ChevronRight, Terminal, FileText, FileDown, Image as ImgIcon } from "lucide-react";
 
 const sevPill: Record<string, { bg: string; fg: string }> = {
   low: { bg: "rgba(79,155,144,0.15)", fg: "var(--color-teal)" },
