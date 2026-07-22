@@ -5,6 +5,8 @@ export interface CaseMarker {
   id: string;
   district: string;
   position: { top: string; left: string };
+  lat: number;
+  lng: number;
   severity: Severity;
   caseCount: number;
   crimeType: string;
@@ -36,6 +38,8 @@ export const cases: CaseMarker[] = [
     id: "WF-0221",
     district: "Whitefield",
     position: { top: "38%", left: "62%" },
+    lat: 12.9698,
+    lng: 77.7499,
     severity: "critical",
     caseCount: 7,
     crimeType: "Armed Robbery",
@@ -50,6 +54,8 @@ export const cases: CaseMarker[] = [
     id: "IN-0187",
     district: "Indiranagar",
     position: { top: "48%", left: "44%" },
+    lat: 12.9784,
+    lng: 77.6408,
     severity: "elevated",
     caseCount: 4,
     crimeType: "Cybercrime",
@@ -64,6 +70,8 @@ export const cases: CaseMarker[] = [
     id: "KM-0342",
     district: "Koramangala",
     position: { top: "62%", left: "40%" },
+    lat: 12.9352,
+    lng: 77.6245,
     severity: "elevated",
     caseCount: 5,
     crimeType: "Chain Snatching",
@@ -78,6 +86,8 @@ export const cases: CaseMarker[] = [
     id: "KR-0098",
     district: "KR Puram",
     position: { top: "30%", left: "70%" },
+    lat: 13.0075,
+    lng: 77.6961,
     severity: "low",
     caseCount: 2,
     crimeType: "Vehicle Theft",
@@ -92,6 +102,8 @@ export const cases: CaseMarker[] = [
     id: "MA-0411",
     district: "Marathahalli",
     position: { top: "44%", left: "58%" },
+    lat: 12.9591,
+    lng: 77.6974,
     severity: "critical",
     caseCount: 6,
     crimeType: "Burglary",
@@ -106,6 +118,8 @@ export const cases: CaseMarker[] = [
     id: "IN-0192",
     district: "Indiranagar",
     position: { top: "54%", left: "48%" },
+    lat: 12.9719,
+    lng: 77.6412,
     severity: "low",
     caseCount: 1,
     crimeType: "Theft",
