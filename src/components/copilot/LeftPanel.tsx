@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { useCopilot } from "@/lib/copilot-store";
 import { alerts, initialChat, type ChatMessage } from "@/lib/mock-data";
-import { Send, Mic, ChevronRight, Terminal, FileText, FileDown, Image as ImgIcon } from "lucide-react";
+import {
+  Send,
+  Mic,
+  ChevronRight,
+  Terminal,
+  FileText,
+  FileDown,
+  Image as ImgIcon,
+} from "lucide-react";
 
 const sevPill: Record<string, { bg: string; fg: string }> = {
   low: { bg: "rgba(79,155,144,0.15)", fg: "var(--color-teal)" },
@@ -184,8 +192,7 @@ LIMIT 20;`,
               <div
                 className="rounded-md px-3 py-2 text-[12.5px] leading-relaxed"
                 style={{
-                  backgroundColor:
-                    m.role === "user" ? "var(--color-bg-3)" : "var(--color-bg-1)",
+                  backgroundColor: m.role === "user" ? "var(--color-bg-3)" : "var(--color-bg-1)",
                   border: "1px solid var(--color-border-soft)",
                   color: "var(--color-text-hi)",
                 }}
@@ -209,7 +216,8 @@ LIMIT 20;`,
                     {openQuery === i ? "Hide query" : "Show query"}
                   </button>
                   {openQuery === i && (
-                    <div className="mt-1.5 rounded bg-[#08.0b.0e] border-l-2 border-[var(--color-amber)] overflow-hidden"
+                    <div
+                      className="mt-1.5 rounded bg-[#08.0b.0e] border-l-2 border-[var(--color-amber)] overflow-hidden"
                       style={{ backgroundColor: "#080b0e" }}
                     >
                       <div className="px-2.5 py-1 border-b border-[var(--color-border-soft)] flex items-center gap-2">
@@ -217,10 +225,7 @@ LIMIT 20;`,
                           Tables:
                         </span>
                         {m.query.tables.map((t) => (
-                          <span
-                            key={t}
-                            className="font-mono text-[10px] text-[var(--color-amber)]"
-                          >
+                          <span key={t} className="font-mono text-[10px] text-[var(--color-amber)]">
                             {t}
                           </span>
                         ))}
@@ -258,9 +263,7 @@ LIMIT 20;`,
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              language === "kn"
-                ? "ಒಂದು ಪ್ರಶ್ನೆ ಕೇಳಿ…"
-                : "Ask about FIRs, accused, patterns…"
+              language === "kn" ? "ಒಂದು ಪ್ರಶ್ನೆ ಕೇಳಿ…" : "Ask about FIRs, accused, patterns…"
             }
             className="flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--color-text-lo)]"
           />
@@ -301,9 +304,7 @@ function Filters() {
                   style={{
                     backgroundColor: active ? "var(--color-amber)" : "var(--color-bg-2)",
                     color: active ? "#0c1013" : "var(--color-text-mid)",
-                    borderColor: active
-                      ? "var(--color-amber)"
-                      : "var(--color-border-default)",
+                    borderColor: active ? "var(--color-amber)" : "var(--color-border-default)",
                     fontWeight: active ? 600 : 400,
                   }}
                 >
@@ -392,11 +393,43 @@ function NetworkGraph() {
         </div>
         <svg viewBox="0 0 340 380" className="flex-1 w-full">
           {/* dashed flagged edges */}
-          <line x1="170" y1="180" x2="70" y2="80" stroke="var(--color-amber)" strokeWidth="1.2" strokeDasharray="4 3" />
-          <line x1="170" y1="180" x2="280" y2="90" stroke="var(--color-amber)" strokeWidth="1.2" strokeDasharray="4 3" />
-          <line x1="170" y1="180" x2="60" y2="290" stroke="var(--color-amber)" strokeWidth="1.2" strokeDasharray="4 3" />
+          <line
+            x1="170"
+            y1="180"
+            x2="70"
+            y2="80"
+            stroke="var(--color-amber)"
+            strokeWidth="1.2"
+            strokeDasharray="4 3"
+          />
+          <line
+            x1="170"
+            y1="180"
+            x2="280"
+            y2="90"
+            stroke="var(--color-amber)"
+            strokeWidth="1.2"
+            strokeDasharray="4 3"
+          />
+          <line
+            x1="170"
+            y1="180"
+            x2="60"
+            y2="290"
+            stroke="var(--color-amber)"
+            strokeWidth="1.2"
+            strokeDasharray="4 3"
+          />
           {/* solid edges */}
-          <line x1="170" y1="180" x2="280" y2="290" stroke="#4F9B90" strokeWidth="1" opacity="0.6" />
+          <line
+            x1="170"
+            y1="180"
+            x2="280"
+            y2="290"
+            stroke="#4F9B90"
+            strokeWidth="1"
+            opacity="0.6"
+          />
           <line x1="70" y1="80" x2="60" y2="290" stroke="#293138" strokeWidth="1" />
           <line x1="280" y1="90" x2="280" y2="290" stroke="#293138" strokeWidth="1" />
 
@@ -408,8 +441,22 @@ function NetworkGraph() {
             [280, 290, "V-611"],
           ].map(([x, y, id]) => (
             <g key={id as string}>
-              <circle cx={x as number} cy={y as number} r="14" fill="var(--color-bg-3)" stroke="#5E6C73" strokeWidth="1.2" />
-              <text x={x as number} y={(y as number) + 3} textAnchor="middle" fontSize="8" fill="#9DACB3" fontFamily="IBM Plex Mono">
+              <circle
+                cx={x as number}
+                cy={y as number}
+                r="14"
+                fill="var(--color-bg-3)"
+                stroke="#5E6C73"
+                strokeWidth="1.2"
+              />
+              <text
+                x={x as number}
+                y={(y as number) + 3}
+                textAnchor="middle"
+                fontSize="8"
+                fill="#9DACB3"
+                fontFamily="IBM Plex Mono"
+              >
                 {id}
               </text>
             </g>
@@ -422,19 +469,56 @@ function NetworkGraph() {
             [170, 300, "IN-0187"],
           ].map(([x, y, id]) => (
             <g key={id as string}>
-              <circle cx={x as number} cy={y as number} r="16" fill="rgba(79,155,144,0.15)" stroke="#4F9B90" strokeWidth="1.4" />
-              <text x={x as number} y={(y as number) + 3} textAnchor="middle" fontSize="8" fill="#4F9B90" fontFamily="IBM Plex Mono" fontWeight="600">
+              <circle
+                cx={x as number}
+                cy={y as number}
+                r="16"
+                fill="rgba(79,155,144,0.15)"
+                stroke="#4F9B90"
+                strokeWidth="1.4"
+              />
+              <text
+                x={x as number}
+                y={(y as number) + 3}
+                textAnchor="middle"
+                fontSize="8"
+                fill="#4F9B90"
+                fontFamily="IBM Plex Mono"
+                fontWeight="600"
+              >
                 {id}
               </text>
             </g>
           ))}
 
           {/* central accused */}
-          <circle cx="170" cy="180" r="24" fill="rgba(193,88,76,0.15)" stroke="#C1584C" strokeWidth="1.8" />
-          <text x="170" y="177" textAnchor="middle" fontSize="8" fill="#9DACB3" fontFamily="IBM Plex Mono">
+          <circle
+            cx="170"
+            cy="180"
+            r="24"
+            fill="rgba(193,88,76,0.15)"
+            stroke="#C1584C"
+            strokeWidth="1.8"
+          />
+          <text
+            x="170"
+            y="177"
+            textAnchor="middle"
+            fontSize="8"
+            fill="#9DACB3"
+            fontFamily="IBM Plex Mono"
+          >
             ACCUSED
           </text>
-          <text x="170" y="188" textAnchor="middle" fontSize="10" fill="#E9EEF0" fontWeight="600" fontFamily="IBM Plex Sans">
+          <text
+            x="170"
+            y="188"
+            textAnchor="middle"
+            fontSize="10"
+            fill="#E9EEF0"
+            fontWeight="600"
+            fontFamily="IBM Plex Sans"
+          >
             Ramesh K.
           </text>
         </svg>
@@ -488,7 +572,10 @@ function AuditLog() {
   return (
     <div className="h-full overflow-y-auto scrollbar-thin p-4 space-y-3">
       {entries.map((e, i) => (
-        <div key={i} className="rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] overflow-hidden">
+        <div
+          key={i}
+          className="rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] overflow-hidden"
+        >
           <div className="px-3 py-2 border-b border-[var(--color-border-soft)] flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-lo)]">
               Query {String(i + 1).padStart(3, "0")}
@@ -496,7 +583,10 @@ function AuditLog() {
             <span className="font-mono text-[10px] text-[var(--color-text-mid)]">{e.t}</span>
           </div>
           <div className="px-3 py-2 text-[12px] text-[var(--color-text-hi)] italic">"{e.q}"</div>
-          <div className="border-l-2 border-[var(--color-amber)] mx-3 mb-3 rounded-r overflow-hidden" style={{ backgroundColor: "#080b0e" }}>
+          <div
+            className="border-l-2 border-[var(--color-amber)] mx-3 mb-3 rounded-r overflow-hidden"
+            style={{ backgroundColor: "#080b0e" }}
+          >
             <div className="px-2.5 py-1 flex items-center gap-2 border-b border-[var(--color-border-soft)]">
               {e.tables.map((t) => (
                 <span key={t} className="font-mono text-[9.5px] text-[var(--color-amber)]">
@@ -517,9 +607,21 @@ function AuditLog() {
 function ExportReports() {
   const [toast, setToast] = useState<string | null>(null);
   const cards = [
-    { icon: FileText, title: "Conversation History", desc: "Export current chat as a signed PDF transcript." },
-    { icon: FileDown as any, title: "Case Bundle", desc: "Compile the filtered case set into an investigation report." },
-    { icon: ImgIcon, title: "Network Graph Snapshot", desc: "Export the current graph view as a high-resolution image." },
+    {
+      icon: FileText,
+      title: "Conversation History",
+      desc: "Export current chat as a signed PDF transcript.",
+    },
+    {
+      icon: FileDown,
+      title: "Case Bundle",
+      desc: "Compile the filtered case set into an investigation report.",
+    },
+    {
+      icon: ImgIcon,
+      title: "Network Graph Snapshot",
+      desc: "Export the current graph view as a high-resolution image.",
+    },
   ];
   const trigger = (name: string) => {
     setToast(`✓ ${name} generated — ready to download`);
@@ -530,7 +632,10 @@ function ExportReports() {
       {cards.map((c) => {
         const Icon = c.icon;
         return (
-          <div key={c.title} className="rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] p-3">
+          <div
+            key={c.title}
+            className="rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] p-3"
+          >
             <div className="flex items-start gap-3">
               <div className="h-8 w-8 rounded bg-[var(--color-bg-3)] border border-[var(--color-amber-dim)] flex items-center justify-center flex-shrink-0">
                 <Icon size={14} className="text-[var(--color-amber)]" />

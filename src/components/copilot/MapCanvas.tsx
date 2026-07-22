@@ -29,7 +29,7 @@ export function MapCanvas() {
     // Dynamically import Leaflet on the client
     import("leaflet").then((leaflet) => {
       const L = leaflet.default || leaflet;
-      
+
       if (!mapDivRef.current) return;
 
       map = L.map(mapDivRef.current, {
@@ -59,14 +59,13 @@ export function MapCanvas() {
       cases.forEach((c) => {
         const marker = L.circleMarker(
           [c.lat, c.lng],
-          getMarkerOptions(sevColor[c.severity], false)
+          getMarkerOptions(sevColor[c.severity], false),
         ).addTo(map!);
-        
+
         marker.on("click", () => selectCase(c));
         markersRef.current.set(c.id, marker);
       });
 
-      // Initial selection logic in case one was selected before map loaded
       if (selectedCase) {
         const m = markersRef.current.get(selectedCase.id);
         if (m) m.setStyle(getMarkerOptions(sevColor[selectedCase.severity], true));
@@ -121,7 +120,13 @@ export function MapCanvas() {
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-[var(--color-bg-0)]">
-      <div ref={mapDivRef} className="absolute inset-0 z-0" />
+      <div
+        ref={mapDivRef}
+        className="absolute inset-0 z-0"
+        role="application"
+        aria-label="Interactive Crime Map showing case locations"
+        tabIndex={0}
+      />
 
       {/* subtle vignette + amber wash to keep the console mood */}
       <div
