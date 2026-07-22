@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-import appCss from "../styles.css?url";
+
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
