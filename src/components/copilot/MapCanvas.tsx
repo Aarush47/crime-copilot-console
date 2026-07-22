@@ -2,6 +2,10 @@ import { useEffect, useRef } from "react";
 import { cases } from "@/lib/mock-data";
 import { useCopilot } from "@/lib/copilot-store";
 import { Plus, Minus } from "lucide-react";
+import "leaflet/dist/leaflet.css";
+
+// We import types statically, but load the leaflet JS module dynamically to avoid SSR "window is not defined" errors.
+import type L from "leaflet";
 
 const sevColor: Record<string, string> = {
   low: "#4F9B90",
@@ -9,116 +13,100 @@ const sevColor: Record<string, string> = {
   critical: "#C1584C",
 };
 
-// Dark map style tuned to match the console tokens.
-const darkStyle: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#0c1013" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0c1013" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#5E6C73" }] },
-  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#293138" }] },
-  { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#8A6C33" }] },
-  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#9DACB3" }] },
-  { featureType: "administrative.neighborhood", elementType: "labels.text.fill", stylers: [{ color: "#5E6C73" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#181f24" }] },
-  { featureType: "road", elementType: "labels", stylers: [{ visibility: "off" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#20272d" }] },
-  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#293138" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0a0d10" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4F9B90" }] },
-  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#12171b" }] },
-];
-
-let scriptPromise: Promise<void> | null = null;
-
-function loadMapsScript(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if ((window as any).google?.maps) return Promise.resolve();
-  if (scriptPromise) return scriptPromise;
-
-  scriptPromise = new Promise((resolve, reject) => {
-    const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
-    const channel = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID;
-    if (!key) {
-      reject(new Error("Google Maps browser key missing"));
-      return;
-    }
-    (window as any).__kspInitMap = () => resolve();
-    const s = document.createElement("script");
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__kspInitMap${channel ? `&channel=${channel}` : ""}`;
-    s.async = true;
-    s.onerror = () => reject(new Error("Failed to load Google Maps"));
-    document.head.appendChild(s);
-  });
-  return scriptPromise;
-}
-
-function markerIcon(color: string, active: boolean): google.maps.Symbol {
-  return {
-    path: (window as any).google.maps.SymbolPath.CIRCLE,
-    fillColor: color,
-    fillOpacity: 1,
-    strokeColor: active ? "#D9A441" : "#E9EEF0",
-    strokeWeight: active ? 3 : 1.5,
-    scale: active ? 10 : 8,
-  };
-}
-
 export function MapCanvas() {
   const { selectedCase, selectCase } = useCopilot();
   const mapDivRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<Map<string, L.CircleMarker>>(new Map());
   const selectedIdRef = useRef<string | null>(null);
 
   // Init map once.
   useEffect(() => {
-    let cancelled = false;
-    loadMapsScript()
-      .then(() => {
-        if (cancelled || !mapDivRef.current || mapRef.current) return;
-        const g = (window as any).google;
-        const map = new g.maps.Map(mapDivRef.current, {
-          center: { lat: 12.9716, lng: 77.6412 },
-          zoom: 12,
-          disableDefaultUI: true,
-          gestureHandling: "greedy",
-          backgroundColor: "#0c1013",
-          styles: darkStyle,
-        });
-        mapRef.current = map;
+    if (!mapDivRef.current || mapRef.current) return;
 
-        cases.forEach((c) => {
-          const marker = new g.maps.Marker({
-            position: { lat: c.lat, lng: c.lng },
-            map,
-            icon: markerIcon(sevColor[c.severity], false),
-            title: `${c.id} · ${c.district}`,
-            optimized: false,
-          });
-          marker.addListener("click", () => selectCase(c));
-          markersRef.current.set(c.id, marker);
-        });
-      })
-      .catch((err) => console.error("Maps load failed:", err));
+    let map: L.Map | null = null;
+
+    // Dynamically import Leaflet on the client
+    import("leaflet").then((leaflet) => {
+      const L = leaflet.default || leaflet;
+
+      if (!mapDivRef.current) return;
+
+      map = L.map(mapDivRef.current, {
+        center: [12.9716, 77.6412],
+        zoom: 12,
+        zoomControl: false,
+        attributionControl: false, // Hidden to match original console UI
+      });
+
+      // Dark Matter tiles by CartoDB (matches the dark console theme nicely)
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        subdomains: "abcd",
+        maxZoom: 20,
+      }).addTo(map);
+
+      mapRef.current = map;
+
+      const getMarkerOptions = (color: string, active: boolean): L.CircleMarkerOptions => ({
+        radius: active ? 10 : 8,
+        fillColor: color,
+        color: active ? "#D9A441" : "#E9EEF0",
+        weight: active ? 3 : 1.5,
+        opacity: 1,
+        fillOpacity: 1,
+      });
+
+      cases.forEach((c) => {
+        const marker = L.circleMarker(
+          [c.lat, c.lng],
+          getMarkerOptions(sevColor[c.severity], false),
+        ).addTo(map!);
+
+        marker.on("click", () => selectCase(c));
+        markersRef.current.set(c.id, marker);
+      });
+
+      if (selectedCase) {
+        const m = markersRef.current.get(selectedCase.id);
+        if (m) m.setStyle(getMarkerOptions(sevColor[selectedCase.severity], true));
+        map.panTo([selectedCase.lat, selectedCase.lng], { animate: false });
+      }
+    });
+
     return () => {
-      cancelled = true;
+      if (map) {
+        map.remove();
+        mapRef.current = null;
+      }
     };
   }, [selectCase]);
 
   // Reflect selection in marker styling + recenter.
   useEffect(() => {
+    // Prevent errors if Leaflet hasn't finished loading yet
+    if (!mapRef.current) return;
+
+    // Helper for marker styles
+    const getMarkerOpts = (color: string, active: boolean): L.CircleMarkerOptions => ({
+      radius: active ? 10 : 8,
+      fillColor: color,
+      color: active ? "#D9A441" : "#E9EEF0",
+      weight: active ? 3 : 1.5,
+      opacity: 1,
+      fillOpacity: 1,
+    });
+
     const prev = selectedIdRef.current;
     if (prev && prev !== selectedCase?.id) {
       const m = markersRef.current.get(prev);
       const prevCase = cases.find((c) => c.id === prev);
-      if (m && prevCase) m.setIcon(markerIcon(sevColor[prevCase.severity], false));
+      if (m && prevCase) m.setStyle(getMarkerOpts(sevColor[prevCase.severity], false));
     }
     if (selectedCase) {
       const m = markersRef.current.get(selectedCase.id);
-      if (m) m.setIcon(markerIcon(sevColor[selectedCase.severity], true));
+      if (m) m.setStyle(getMarkerOpts(sevColor[selectedCase.severity], true));
       if (mapRef.current) {
-        mapRef.current.panTo({ lat: selectedCase.lat, lng: selectedCase.lng });
+        mapRef.current.panTo([selectedCase.lat, selectedCase.lng], { animate: true });
       }
     }
     selectedIdRef.current = selectedCase?.id ?? null;
@@ -127,16 +115,22 @@ export function MapCanvas() {
   const zoom = (delta: number) => {
     const m = mapRef.current;
     if (!m) return;
-    m.setZoom((m.getZoom() ?? 12) + delta);
+    m.setZoom(m.getZoom() + delta);
   };
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-[var(--color-bg-0)]">
-      <div ref={mapDivRef} className="absolute inset-0" />
+      <div
+        ref={mapDivRef}
+        className="absolute inset-0 z-0"
+        role="application"
+        aria-label="Interactive Crime Map showing case locations"
+        tabIndex={0}
+      />
 
       {/* subtle vignette + amber wash to keep the console mood */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none z-[1]"
         style={{
           background:
             "radial-gradient(ellipse at 50% 50%, rgba(217,164,65,0.04), transparent 55%), linear-gradient(to bottom, rgba(12,16,19,0.35), transparent 20%, transparent 80%, rgba(12,16,19,0.5))",

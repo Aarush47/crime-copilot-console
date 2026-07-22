@@ -7,14 +7,10 @@ export function TopBar() {
     <div className="fixed top-3 left-[68px] right-3 z-20 flex items-center gap-3">
       <div className="panel-float px-3 py-2 flex items-center gap-2.5">
         <div className="h-7 w-7 rounded bg-[var(--color-bg-3)] border border-[var(--color-amber-dim)] flex items-center justify-center">
-          <span className="font-mono text-[11px] font-semibold text-[var(--color-amber)]">
-            KSP
-          </span>
+          <span className="font-mono text-[11px] font-semibold text-[var(--color-amber)]">KSP</span>
         </div>
         <div className="leading-tight">
-          <div className="text-[13px] font-semibold text-[var(--color-text-hi)]">
-            Crime Copilot
-          </div>
+          <div className="text-[13px] font-semibold text-[var(--color-text-hi)]">Crime Copilot</div>
           <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-[var(--color-text-lo)]">
             Investigator Console · v0.4
           </div>

@@ -71,7 +71,9 @@
   backdrop-filter: blur(8px);
   border: 1px solid var(--color-border-default);
   border-radius: 10px;
-  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 12px 40px -12px rgba(0, 0, 0, 0.6),
+    0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 @utility map-grid-bg {

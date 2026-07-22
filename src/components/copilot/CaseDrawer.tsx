@@ -49,7 +49,10 @@ export function CaseDrawer() {
 
           <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
             <Field label="Crime Type" value={selectedCase.crimeType} />
-            <Field label="District / Unit" value={`${selectedCase.district} · ${selectedCase.unit}`} />
+            <Field
+              label="District / Unit"
+              value={`${selectedCase.district} · ${selectedCase.unit}`}
+            />
             <Field label="Registered" value={selectedCase.registeredDate} mono />
             <Field label="Accused" value={selectedCase.accused} highlight />
             <div>
