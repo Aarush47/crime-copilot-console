@@ -1,0 +1,94 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@theme {
+  --color-bg-0: #0c1013;
+  --color-bg-1: #12171b;
+  --color-bg-2: #181f24;
+  --color-bg-3: #1f2830;
+  --color-border-default: #293138;
+  --color-border-soft: #20272d;
+  --color-text-hi: #e9eef0;
+  --color-text-mid: #9dacb3;
+  --color-text-lo: #5e6c73;
+  --color-amber: #d9a441;
+  --color-amber-dim: #8a6c33;
+  --color-teal: #4f9b90;
+  --color-red-crit: #c1584c;
+  --color-orange-el: #e0924a;
+
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@theme inline {
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --color-background: var(--color-bg-0);
+  --color-foreground: var(--color-text-hi);
+  --color-card: var(--color-bg-1);
+  --color-card-foreground: var(--color-text-hi);
+  --color-popover: var(--color-bg-1);
+  --color-popover-foreground: var(--color-text-hi);
+  --color-primary: var(--color-amber);
+  --color-primary-foreground: #0c1013;
+  --color-secondary: var(--color-bg-3);
+  --color-secondary-foreground: var(--color-text-hi);
+  --color-muted: var(--color-bg-2);
+  --color-muted-foreground: var(--color-text-mid);
+  --color-accent: var(--color-bg-3);
+  --color-accent-foreground: var(--color-text-hi);
+  --color-destructive: var(--color-red-crit);
+  --color-destructive-foreground: var(--color-text-hi);
+  --color-border: var(--color-border-default);
+  --color-input: var(--color-bg-2);
+  --color-ring: var(--color-amber);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background-color: var(--color-bg-0);
+    color: var(--color-text-hi);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@utility panel-float {
+  background-color: color-mix(in oklab, var(--color-bg-1) 90%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  box-shadow:
+    0 12px 40px -12px rgba(0, 0, 0, 0.6),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+@utility map-grid-bg {
+  background-color: var(--color-bg-0);
+  background-image:
+    linear-gradient(to right, rgba(41, 49, 56, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(41, 49, 56, 0.35) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 50%, rgba(217, 164, 65, 0.04), transparent 60%);
+  background-size:
+    48px 48px,
+    48px 48px,
+    100% 100%;
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-default) transparent;
+}
