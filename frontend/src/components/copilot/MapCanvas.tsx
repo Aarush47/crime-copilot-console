@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { cases } from "@/lib/mock-data";
 import { useCopilot } from "@/lib/copilot-store";
 import { Plus, Minus } from "lucide-react";
 import "leaflet/dist/leaflet.css";
@@ -14,13 +13,17 @@ const sevColor: Record<string, string> = {
 };
 
 export function MapCanvas() {
-  const { selectedCase, selectCase } = useCopilot();
+  const { cases, fetchCases, selectedCase, selectCase } = useCopilot();
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, L.CircleMarker>>(new Map());
   const selectedIdRef = useRef<string | null>(null);
 
   // Init map once.
+  useEffect(() => {
+    fetchCases();
+  }, [fetchCases]);
+
   useEffect(() => {
     if (!mapDivRef.current || mapRef.current) return;
 
@@ -46,6 +49,26 @@ export function MapCanvas() {
       }).addTo(map);
 
       mapRef.current = map;
+    });
+
+    return () => {
+      if (map) {
+        map.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+
+  // Render markers when cases load/change
+  useEffect(() => {
+    if (!mapRef.current) return;
+    
+    import("leaflet").then((leaflet) => {
+      const L = leaflet.default || leaflet;
+      
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current.clear();
 
       const getMarkerOptions = (color: string, active: boolean): L.CircleMarkerOptions => ({
         radius: active ? 10 : 8,
@@ -60,26 +83,13 @@ export function MapCanvas() {
         const marker = L.circleMarker(
           [c.lat, c.lng],
           getMarkerOptions(sevColor[c.severity], false),
-        ).addTo(map!);
+        ).addTo(mapRef.current!);
 
         marker.on("click", () => selectCase(c));
         markersRef.current.set(c.id, marker);
       });
-
-      if (selectedCase) {
-        const m = markersRef.current.get(selectedCase.id);
-        if (m) m.setStyle(getMarkerOptions(sevColor[selectedCase.severity], true));
-        map.panTo([selectedCase.lat, selectedCase.lng], { animate: false });
-      }
     });
-
-    return () => {
-      if (map) {
-        map.remove();
-        mapRef.current = null;
-      }
-    };
-  }, [selectCase]);
+  }, [cases, selectCase]);
 
   // Reflect selection in marker styling + recenter.
   useEffect(() => {

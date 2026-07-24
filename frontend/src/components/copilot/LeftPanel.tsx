@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCopilot } from "@/lib/copilot-store";
-import { alerts, initialChat, type ChatMessage } from "@/lib/mock-data";
+import { initialChat, type ChatMessage, type Alert } from "@/lib/mock-data";
+import { api } from "@/lib/api";
 import {
   Send,
   Mic,
@@ -53,13 +54,27 @@ const tabLabel = {
 } as const;
 
 function Overview() {
+  const { dashboardMetrics, fetchDashboardMetrics } = useCopilot();
+  
+  useEffect(() => {
+    fetchDashboardMetrics();
+  }, [fetchDashboardMetrics]);
+
+  const active = dashboardMetrics?.active_investigations || 0;
+  const critical = dashboardMetrics?.critical_cases || 0;
+  const todaysFir = dashboardMetrics?.todays_fir || 0;
+  // Compute some placeholder risk score based on critical cases, or just default to 0.0 if no cases
+  const riskScore = critical > 0 ? (critical * 0.5).toFixed(1) : "0.0";
+  
+  const alertsList: Alert[] = dashboardMetrics?.recent_alerts || [];
+
   return (
     <div className="h-full overflow-y-auto scrollbar-thin p-4 space-y-4">
       <div className="grid grid-cols-2 gap-2.5">
-        <Stat label="Active Investigations" value="147" />
-        <Stat label="Critical Cases" value="12" trend="↑ 2 in 24h" tone="red" />
-        <Stat label="FIRs · 30d" value="418" />
-        <Stat label="Avg Risk Score" value="6.4" trend="predictive index" tone="amber" />
+        <Stat label="Active Investigations" value={active.toString()} />
+        <Stat label="Critical Cases" value={critical.toString()} trend={critical > 0 ? "Requires Attention" : ""} tone="red" />
+        <Stat label="Total FIRs" value={todaysFir.toString()} />
+        <Stat label="Avg Risk Score" value={riskScore} trend="predictive index" tone="amber" />
       </div>
 
       <div>
@@ -72,8 +87,11 @@ function Overview() {
           </button>
         </div>
         <div className="space-y-2">
-          {alerts.map((a) => {
-            const s = sevPill[a.severity];
+          {alertsList.length === 0 && (
+            <div className="text-[11px] text-[var(--color-text-lo)] italic">No recent alerts.</div>
+          )}
+          {alertsList.map((a) => {
+            const s = sevPill[a.severity] || sevPill.low;
             return (
               <div
                 key={a.id}
@@ -87,18 +105,20 @@ function Overview() {
                     {a.severity}
                   </span>
                   <span className="font-mono text-[10px] text-[var(--color-text-lo)]">
-                    {a.timestamp}
+                    {a.timestamp || "Just now"}
                   </span>
                 </div>
                 <div className="text-[12.5px] font-semibold text-[var(--color-text-hi)] mb-0.5">
-                  {a.title}
+                  {a.title || "Alert"}
                 </div>
-                <div className="flex items-center gap-1 text-[11px] text-[var(--color-text-mid)] mb-1">
-                  <span className="h-1 w-1 rounded-full bg-[var(--color-text-lo)]" />
-                  {a.location}
-                </div>
+                {a.location && (
+                  <div className="flex items-center gap-1 text-[11px] text-[var(--color-text-mid)] mb-1">
+                    <span className="h-1 w-1 rounded-full bg-[var(--color-text-lo)]" />
+                    {a.location}
+                  </div>
+                )}
                 <div className="text-[11.5px] text-[var(--color-text-mid)] leading-snug">
-                  {a.description}
+                  {a.description || a.message}
                 </div>
               </div>
             );
@@ -149,28 +169,29 @@ function Chat() {
   const [input, setInput] = useState("");
   const [openQuery, setOpenQuery] = useState<number | null>(1);
 
-  const send = (text: string) => {
+  const send = async (text: string) => {
     if (!text.trim()) return;
     const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const userMsg: ChatMessage = { role: "user", text, timestamp: now };
-    const agentMsg: ChatMessage = {
-      role: "agent",
-      text: `Running query across FIR + accused tables… 4 matching records. Common thread: two-wheeler-borne suspects, ITPL corridor.`,
-      timestamp: now,
-      query: {
-        tables: ["fir", "accused", "location"],
-        sql: `SELECT f.fir_no, f.registered_at, l.district, a.name
-FROM fir f
-JOIN location l ON l.id = f.location_id
-LEFT JOIN accused a ON a.fir_no = f.fir_no
-WHERE l.district = 'Whitefield'
-  AND f.crime_type = 'Robbery'
-ORDER BY f.registered_at DESC
-LIMIT 20;`,
-      },
-    };
-    setMessages((m) => [...m, userMsg, agentMsg]);
+    
+    // Optimistically add user message and clear input
+    setMessages((m) => [...m, userMsg]);
     setInput("");
+
+    try {
+      const agentMsg = await api.askCopilot(text);
+      setMessages((m) => [...m, agentMsg]);
+    } catch (e) {
+      console.error(e);
+      setMessages((m) => [
+        ...m,
+        {
+          role: "agent",
+          text: "Sorry, I could not connect to the backend. Please try again.",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        }
+      ]);
+    }
   };
 
   const suggestion = selectedCase ? `Ask about ${selectedCase.id}` : null;
@@ -606,6 +627,25 @@ function AuditLog() {
 
 function ExportReports() {
   const [toast, setToast] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    setUploading(true);
+    setToast(`Uploading ${files.length} file(s) to database...`);
+    
+    try {
+      const res = await api.uploadCases(files);
+      setToast(`✓ Success: ${res.inserted} records inserted.`);
+    } catch (err: any) {
+      setToast(`✗ Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false);
+      e.target.value = ''; // Reset input
+    }
+  };
   const cards = [
     {
       icon: FileText,
@@ -629,6 +669,19 @@ function ExportReports() {
   };
   return (
     <div className="h-full overflow-y-auto scrollbar-thin p-4 space-y-3 relative">
+      <div className="rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] p-3 mb-4">
+        <div className="text-[12.5px] font-semibold text-[var(--color-text-hi)] mb-1">
+          Import Data
+        </div>
+        <div className="text-[11.5px] text-[var(--color-text-mid)] mb-3 leading-snug">
+          Upload a CSV file of cases to insert into the Catalyst Data Store.
+        </div>
+        <label className={`w-full flex items-center justify-center rounded bg-[var(--color-bg-3)] border border-dashed border-[var(--color-border-default)] hover:border-[var(--color-amber-dim)] hover:text-[var(--color-amber)] text-[11.5px] font-mono uppercase tracking-wider text-[var(--color-text-mid)] py-2 cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+          {uploading ? "Uploading..." : "Select CSV Files"}
+          <input type="file" accept=".csv" multiple className="hidden" onChange={handleFileUpload} disabled={uploading} />
+        </label>
+      </div>
+
       {cards.map((c) => {
         const Icon = c.icon;
         return (

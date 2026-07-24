@@ -1,0 +1,30 @@
+[debug] [2026-07-24T05:33:52.614Z] : 
+[debug] [2026-07-24T05:33:52.615Z] : ----------------------------------------------------------------------
+[debug] [2026-07-24T05:33:52.615Z] : Command:      /opt/homebrew/Cellar/node/25.3.0/bin/node /opt/homebrew/bin/catalyst deploy
+[debug] [2026-07-24T05:33:52.615Z] : CLI Version:  1.27.0
+[debug] [2026-07-24T05:33:52.615Z] : Platform:     darwin
+[debug] [2026-07-24T05:33:52.615Z] : Node Version: v25.3.0
+[debug] [2026-07-24T05:33:52.615Z] : Time:         Fri Jul 24 2026 11:03:52 GMT+0530 (India Standard Time)
+[debug] [2026-07-24T05:33:52.615Z] : ----------------------------------------------------------------------
+[debug] [2026-07-24T05:33:52.615Z] : 
+[debug] [2026-07-24T05:33:53.018Z] : > authorizing via signed-in user option
+[debug] [2026-07-24T05:33:53.018Z] : > command requires scopes: ["ZohoCatalyst.projects.ALL","ZohoCatalyst.functions.ALL","ZohoCatalyst.webapp.ALL","ZohoCatalyst.appsail.Update"]
+[debug] [2026-07-24T05:33:53.062Z] : >>>> HTTP REQUEST : GET https://api.catalyst.zoho.in/baas/v1/project/55427000000041005 
+
+[debug] [2026-07-24T05:33:53.803Z] : <<<< HTTP RESPONSE : 200
+Response Headers: {"server":"ZGS","date":"Fri, 24 Jul 2026 05:33:53 GMT","content-type":"application/vnd.catalyst.v2+json","transfer-encoding":"chunked","connection":"keep-alive","x-content-type-options":"nosniff","cache-control":"private,no-cache,no-store,max-age=0,must-revalidate","pragma":"no-cache","expires":"Thu, 01 Jan 1970 00:00:00 GMT","x-frame-options":"DENY","strict-transport-security":"max-age=64072000; includeSubDomains; preload"}
+
+[debug] [2026-07-24T05:33:53.804Z] : >>>> HTTP REQUEST : GET https://api.catalyst.zoho.in/baas/v1/project/55427000000041005/environment 
+
+[debug] [2026-07-24T05:33:53.995Z] : <<<< HTTP RESPONSE : 200
+Response Headers: {"server":"ZGS","date":"Fri, 24 Jul 2026 05:33:53 GMT","content-type":"application/vnd.catalyst.v2+json","transfer-encoding":"chunked","connection":"keep-alive","x-content-type-options":"nosniff","cache-control":"private,no-cache,no-store,max-age=0,must-revalidate","pragma":"no-cache","expires":"Thu, 01 Jan 1970 00:00:00 GMT","x-frame-options":"DENY","strict-transport-security":"max-age=64072000; includeSubDomains; preload"}
+
+[debug] [2026-07-24T05:33:54.050Z] : >>>> HTTP REQUEST : POST https://api.catalyst.zoho.in/baas/v1/project/55427000000041005/webapp 
+
+[debug] [2026-07-24T05:33:55.223Z] : <<<< HTTP RESPONSE : 200
+Response Headers: {"server":"ZGS","date":"Fri, 24 Jul 2026 05:33:55 GMT","content-type":"application/vnd.catalyst.v2+json","transfer-encoding":"chunked","connection":"keep-alive","x-content-type-options":"nosniff","cache-control":"private,no-cache,no-store,max-age=0,must-revalidate","pragma":"no-cache","expires":"Thu, 01 Jan 1970 00:00:00 GMT","x-frame-options":"DENY","strict-transport-security":"max-age=64072000; includeSubDomains; preload"}
+
+[info] [2026-07-24T05:33:55.228Z] : 
+[info] [2026-07-24T05:33:55.228Z] : Executing predeploy script in /Users/aarush/Downloads/Developer/Untitled/backend/appsail
+[debug] [2026-07-24T05:33:55.228Z] : Executing command > pip3 install --platform manylinux2014_x86_64 --python-version 3.12 --only-binary=:all: -r requirements.txt -t lib/
+[info] [2026-07-24T05:33:55.228Z] : > pip3 install --platform manylinux2014_x86_64 --python-version 3.12 --only-binary=:all: -r requirements.txt -t lib/

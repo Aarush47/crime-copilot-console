@@ -1,0 +1,6 @@
+fir_no,district,ps_jurisdiction,crime_type,status,latitude,longitude,severity,brief_facts,registered_at
+FIR/100/2026,Bengaluru City,Koramangala,Theft,Under Investigation,12.9352,77.6245,low,Theft of mobile phone at forum mall,2026-07-20
+FIR/101/2026,Bengaluru City,Indiranagar,Cybercrime,Under Investigation,12.9784,77.6408,elevated,UPI Phishing incident reported,2026-07-21
+FIR/102/2026,Bengaluru City,Whitefield,Armed Robbery,Under Investigation,12.9698,77.7499,critical,Robbery at ATM with weapons,2026-07-22
+FIR/103/2026,Bengaluru City,Malleswaram,Assault,Closed,13.0068,77.5813,low,Minor altercation near market,2026-07-15
+FIR/104/2026,Bengaluru City,Jayanagar,Burglary,Under Investigation,12.9250,77.5938,critical,House break-in during night,2026-07-23

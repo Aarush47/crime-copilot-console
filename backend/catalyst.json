@@ -1,0 +1,11 @@
+{
+  "appsail": [
+    {
+      "source": "appsail",
+      "name": "crime-copilot"
+    }
+  ],
+  "client": {
+    "source": "client"
+  }
+}
