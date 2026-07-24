@@ -67,5 +67,29 @@ export const api = {
       throw new Error(err.detail || "Failed to upload cases");
     }
     return res.json();
+  },
+
+  async getCaseDetails(caseId: string) {
+    const res = await fetch(`${API_BASE}/api/case/${caseId}`);
+    if (!res.ok) throw new Error("Failed to fetch case details");
+    return res.json();
+  },
+
+  async getNetwork(caseId: string) {
+    const res = await fetch(`${API_BASE}/api/network/${caseId}`);
+    if (!res.ok) throw new Error("Failed to fetch network graph");
+    return res.json();
+  },
+
+  async getAnalytics() {
+    const res = await fetch(`${API_BASE}/api/analytics`);
+    if (!res.ok) throw new Error("Failed to fetch analytics");
+    return res.json();
+  },
+
+  async getAuditLogs() {
+    const res = await fetch(`${API_BASE}/api/audit`);
+    if (!res.ok) throw new Error("Failed to fetch audit logs");
+    return res.json();
   }
 };

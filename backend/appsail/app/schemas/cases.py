@@ -1,5 +1,11 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any
+
+class AccusedData(BaseModel):
+    accused_id: str
+    name: str
+    age: str
+    person_id: str
 
 class CaseResponse(BaseModel):
     case_id: str
@@ -10,6 +16,11 @@ class CaseResponse(BaseModel):
     status: str
     date: str
     description: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    severity: Optional[str] = "low"
+    accused: List[AccusedData] = []
+    victims: List[Any] = []
 
 class HotspotData(BaseModel):
     latitude: float

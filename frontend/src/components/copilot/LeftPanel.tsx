@@ -82,7 +82,10 @@ function Overview() {
           <div className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-lo)]">
             Recent Alerts
           </div>
-          <button className="font-mono text-[10px] text-[var(--color-amber)] hover:underline">
+          <button 
+            onClick={() => useCopilot.getState().setActiveTab('audit')} 
+            className="font-mono text-[10px] text-[var(--color-amber)] hover:underline"
+          >
             VIEW ALL
           </button>
         </div>
@@ -403,151 +406,58 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 function NetworkGraph() {
+  const { selectedCase } = useCopilot();
+  const [graphData, setGraphData] = useState<{nodes: any[], edges: any[]} | null>(null);
+
+  useEffect(() => {
+    if (selectedCase) {
+      api.getNetwork(selectedCase.id).then(setGraphData).catch(console.error);
+    }
+  }, [selectedCase]);
+
+  if (!selectedCase) {
+    return (
+      <div className="h-full flex items-center justify-center p-4 text-[12px] text-[var(--color-text-lo)] italic">
+        Select a case to view its network graph.
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-hidden p-4">
       <div className="rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] h-full flex flex-col">
         <div className="px-3 py-2 border-b border-[var(--color-border-soft)] flex items-center justify-between">
           <div className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-mid)]">
-            Suspect Cluster · Ramesh K.
+            Network · {selectedCase.id}
           </div>
-          <div className="font-mono text-[10px] text-[var(--color-amber)]">4 flagged links</div>
+          <div className="font-mono text-[10px] text-[var(--color-amber)]">
+            {graphData?.nodes?.length || 0} nodes
+          </div>
         </div>
-        <svg viewBox="0 0 340 380" className="flex-1 w-full">
-          {/* dashed flagged edges */}
-          <line
-            x1="170"
-            y1="180"
-            x2="70"
-            y2="80"
-            stroke="var(--color-amber)"
-            strokeWidth="1.2"
-            strokeDasharray="4 3"
-          />
-          <line
-            x1="170"
-            y1="180"
-            x2="280"
-            y2="90"
-            stroke="var(--color-amber)"
-            strokeWidth="1.2"
-            strokeDasharray="4 3"
-          />
-          <line
-            x1="170"
-            y1="180"
-            x2="60"
-            y2="290"
-            stroke="var(--color-amber)"
-            strokeWidth="1.2"
-            strokeDasharray="4 3"
-          />
-          {/* solid edges */}
-          <line
-            x1="170"
-            y1="180"
-            x2="280"
-            y2="290"
-            stroke="#4F9B90"
-            strokeWidth="1"
-            opacity="0.6"
-          />
-          <line x1="70" y1="80" x2="60" y2="290" stroke="#293138" strokeWidth="1" />
-          <line x1="280" y1="90" x2="280" y2="290" stroke="#293138" strokeWidth="1" />
-
-          {/* victim nodes */}
-          {[
-            [70, 80, "V-441"],
-            [280, 90, "V-508"],
-            [60, 290, "V-522"],
-            [280, 290, "V-611"],
-          ].map(([x, y, id]) => (
-            <g key={id as string}>
-              <circle
-                cx={x as number}
-                cy={y as number}
-                r="14"
-                fill="var(--color-bg-3)"
-                stroke="#5E6C73"
-                strokeWidth="1.2"
-              />
-              <text
-                x={x as number}
-                y={(y as number) + 3}
-                textAnchor="middle"
-                fontSize="8"
-                fill="#9DACB3"
-                fontFamily="IBM Plex Mono"
-              >
-                {id}
-              </text>
-            </g>
+        <div className="flex-1 overflow-auto p-4 flex flex-col gap-2">
+          {/* Simple textual representation of nodes until graph rendering is implemented */}
+          {graphData?.nodes?.map((n) => (
+            <div key={n.data.id} className="text-[12px] text-[var(--color-text-hi)] border p-2 rounded border-[var(--color-border-soft)]">
+              <span className="text-[var(--color-amber)] uppercase font-mono text-[10px] mr-2">[{n.data.type}]</span>
+              {n.data.label}
+            </div>
           ))}
-
-          {/* case nodes (teal) */}
-          {[
-            [110, 200, "WF-0221"],
-            [230, 200, "MA-0411"],
-            [170, 300, "IN-0187"],
-          ].map(([x, y, id]) => (
-            <g key={id as string}>
-              <circle
-                cx={x as number}
-                cy={y as number}
-                r="16"
-                fill="rgba(79,155,144,0.15)"
-                stroke="#4F9B90"
-                strokeWidth="1.4"
-              />
-              <text
-                x={x as number}
-                y={(y as number) + 3}
-                textAnchor="middle"
-                fontSize="8"
-                fill="#4F9B90"
-                fontFamily="IBM Plex Mono"
-                fontWeight="600"
-              >
-                {id}
-              </text>
-            </g>
+          {graphData?.edges?.map((e, idx) => (
+            <div key={idx} className="text-[11px] text-[var(--color-text-mid)] pl-4">
+              ↳ {e.data.source} --({e.data.label})--&gt; {e.data.target}
+            </div>
           ))}
-
-          {/* central accused */}
-          <circle
-            cx="170"
-            cy="180"
-            r="24"
-            fill="rgba(193,88,76,0.15)"
-            stroke="#C1584C"
-            strokeWidth="1.8"
-          />
-          <text
-            x="170"
-            y="177"
-            textAnchor="middle"
-            fontSize="8"
-            fill="#9DACB3"
-            fontFamily="IBM Plex Mono"
-          >
-            ACCUSED
-          </text>
-          <text
-            x="170"
-            y="188"
-            textAnchor="middle"
-            fontSize="10"
-            fill="#E9EEF0"
-            fontWeight="600"
-            fontFamily="IBM Plex Sans"
-          >
-            Ramesh K.
-          </text>
-        </svg>
+          {!graphData && (
+            <div className="text-[12px] text-[var(--color-text-lo)] italic">Loading graph data...</div>
+          )}
+          {graphData?.nodes?.length === 0 && (
+            <div className="text-[12px] text-[var(--color-text-lo)] italic">No network data found for this case.</div>
+          )}
+        </div>
         <div className="px-3 py-2 border-t border-[var(--color-border-soft)] flex items-center gap-4">
-          <LegendDot color="#C1584C" label="Accused" />
-          <LegendDot color="#4F9B90" label="Cases" />
-          <LegendDot color="#5E6C73" label="Victims" />
-          <LegendDot color="#D9A441" label="Flagged" dashed />
+          <LegendDot color="#C1584C" label="Person" />
+          <LegendDot color="#4F9B90" label="Case" />
+          <LegendDot color="#5E6C73" label="Location" />
         </div>
       </div>
     </div>
@@ -570,57 +480,43 @@ function LegendDot({ color, label, dashed }: { color: string; label: string; das
 }
 
 function AuditLog() {
-  const entries = [
-    {
-      q: "Show all armed robbery cases in Whitefield in the last 30 days.",
-      tables: ["fir", "crime_type"],
-      sql: `SELECT * FROM fir WHERE crime_type='Armed Robbery' AND ps='Whitefield' AND registered_at >= NOW()-INTERVAL '30 days';`,
-      t: "09:14:22",
-    },
-    {
-      q: "List accused linked to more than 2 open FIRs.",
-      tables: ["accused", "fir"],
-      sql: `SELECT a.name, COUNT(*) c FROM accused a JOIN fir f ON f.fir_no=a.fir_no WHERE f.status='Open' GROUP BY a.name HAVING COUNT(*)>2;`,
-      t: "09:22:07",
-    },
-    {
-      q: "Any pattern between Marathahalli and Whitefield burglaries?",
-      tables: ["fir", "location", "modus_operandi"],
-      sql: `SELECT f.fir_no, m.pattern FROM fir f JOIN modus_operandi m ON m.fir_no=f.fir_no WHERE f.district IN ('Whitefield','Marathahalli') AND f.crime_type='Burglary';`,
-      t: "09:38:51",
-    },
-  ];
+  const [entries, setEntries] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.getAuditLogs().then(setEntries).catch(console.error);
+  }, []);
+
   return (
     <div className="h-full overflow-y-auto scrollbar-thin p-4 space-y-3">
       {entries.map((e, i) => (
         <div
-          key={i}
+          key={e.id || i}
           className="rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] overflow-hidden"
         >
           <div className="px-3 py-2 border-b border-[var(--color-border-soft)] flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-lo)]">
-              Query {String(i + 1).padStart(3, "0")}
+              {e.action || `Action ${String(i + 1).padStart(3, "0")}`}
             </span>
-            <span className="font-mono text-[10px] text-[var(--color-text-mid)]">{e.t}</span>
+            <span className="font-mono text-[10px] text-[var(--color-text-mid)]">{e.timestamp || "Recent"}</span>
           </div>
-          <div className="px-3 py-2 text-[12px] text-[var(--color-text-hi)] italic">"{e.q}"</div>
-          <div
-            className="border-l-2 border-[var(--color-amber)] mx-3 mb-3 rounded-r overflow-hidden"
-            style={{ backgroundColor: "#080b0e" }}
-          >
-            <div className="px-2.5 py-1 flex items-center gap-2 border-b border-[var(--color-border-soft)]">
-              {e.tables.map((t) => (
-                <span key={t} className="font-mono text-[9.5px] text-[var(--color-amber)]">
-                  {t}
+          <div className="px-3 py-2 text-[12px] text-[var(--color-text-hi)] italic">"{e.details || "System action"}"</div>
+          {e.user && (
+            <div
+              className="border-l-2 border-[var(--color-amber)] mx-3 mb-3 rounded-r overflow-hidden"
+              style={{ backgroundColor: "#080b0e" }}
+            >
+              <div className="px-2.5 py-1 flex items-center gap-2 border-b border-[var(--color-border-soft)]">
+                <span className="font-mono text-[9.5px] text-[var(--color-amber)]">
+                  User: {e.user}
                 </span>
-              ))}
+              </div>
             </div>
-            <pre className="p-2.5 font-mono text-[10.5px] text-[var(--color-text-hi)] whitespace-pre-wrap overflow-x-auto">
-              {e.sql}
-            </pre>
-          </div>
+          )}
         </div>
       ))}
+      {entries.length === 0 && (
+        <div className="text-[12px] text-[var(--color-text-lo)] italic">No audit logs found.</div>
+      )}
     </div>
   );
 }

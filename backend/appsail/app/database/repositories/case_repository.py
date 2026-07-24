@@ -15,7 +15,7 @@ class CaseRepository:
             return []
             
         try:
-            query = "SELECT ROWID, fir_no, district, ps_jurisdiction, crime_type, status, registered_at, brief_facts, location, severity FROM cases ORDER BY registered_at DESC"
+            query = "SELECT ROWID, fir_no, district, ps_jurisdiction, crime_type, status, registered_at, brief_facts, location, severity FROM cases"
             result = zcql.execute_query(query)
             
             # The result from zcql.execute_query is typically a list of dictionaries 
@@ -51,7 +51,6 @@ class CaseRepository:
             return {}
             
         try:
-            # Note: ROWID is often queried specifically, but for standard WHERE it needs to be CAST or handled carefully depending on Catalyst.
             query = f"SELECT ROWID, fir_no, district, ps_jurisdiction, crime_type, status, registered_at, brief_facts, location, severity FROM cases WHERE ROWID = '{case_id}'"
             result = zcql.execute_query(query)
             if result and len(result) > 0:
@@ -68,6 +67,25 @@ class CaseRepository:
                 else:
                     case_data["latitude"] = 12.9716
                     case_data["longitude"] = 77.5946
+                    
+                # Fetch accused
+                accused_query = f"SELECT ROWID, accused_name, age_year, person_id FROM accused WHERE case_master_id = '{case_id}'"
+                try:
+                    accused_res = zcql.execute_query(accused_query)
+                    accused_list = []
+                    for row in accused_res:
+                        a = row.get("accused", {})
+                        accused_list.append({
+                            "accused_id": str(a.get("ROWID", "")),
+                            "name": str(a.get("accused_name", "Unknown")),
+                            "age": str(a.get("age_year", "")),
+                            "person_id": str(a.get("person_id", ""))
+                        })
+                    case_data["accused"] = accused_list
+                except Exception as ae:
+                    logger.warning(f"Failed to fetch accused for {case_id}: {ae}")
+                    case_data["accused"] = []
+                    
                 return case_data
             return {}
         except Exception as e:

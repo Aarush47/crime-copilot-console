@@ -1,4 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 import { useCopilot } from "@/lib/copilot-store";
 import { X, GitBranch, MessageSquare, FileDown } from "lucide-react";
 
@@ -10,6 +12,15 @@ const sevColor: Record<string, string> = {
 
 export function CaseDrawer() {
   const { selectedCase, selectCase, openChatForCase } = useCopilot();
+  const [caseDetails, setCaseDetails] = useState<any>(null);
+
+  useEffect(() => {
+    if (selectedCase) {
+      api.getCaseDetails(selectedCase.id).then(setCaseDetails).catch(console.error);
+    } else {
+      setCaseDetails(null);
+    }
+  }, [selectedCase]);
 
   return (
     <AnimatePresence>
@@ -26,7 +37,7 @@ export function CaseDrawer() {
               <div className="flex items-center gap-2">
                 <span
                   className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: sevColor[selectedCase.severity] }}
+                  style={{ backgroundColor: sevColor[selectedCase.severity || "low"] }}
                 />
                 <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-lo)]">
                   Case
@@ -36,7 +47,7 @@ export function CaseDrawer() {
                 {selectedCase.id}
               </div>
               <div className="text-[11px] text-[var(--color-text-mid)] mt-0.5">
-                {selectedCase.status}
+                {caseDetails ? caseDetails.status : selectedCase.status}
               </div>
             </div>
             <button
@@ -48,21 +59,31 @@ export function CaseDrawer() {
           </div>
 
           <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
-            <Field label="Crime Type" value={selectedCase.crimeType} />
-            <Field
-              label="District / Unit"
-              value={`${selectedCase.district} · ${selectedCase.unit}`}
-            />
-            <Field label="Registered" value={selectedCase.registeredDate} mono />
-            <Field label="Accused" value={selectedCase.accused} highlight />
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-lo)] mb-1.5">
-                Brief Facts
-              </div>
-              <p className="text-[12.5px] leading-relaxed text-[var(--color-text-hi)]">
-                {selectedCase.briefFacts}
-              </p>
-            </div>
+            {!caseDetails ? (
+              <div className="text-[12px] text-[var(--color-text-lo)] italic">Loading details...</div>
+            ) : (
+              <>
+                <Field label="Crime Type" value={caseDetails.crime_head || selectedCase.crimeType} />
+                <Field
+                  label="District / Unit"
+                  value={`${caseDetails.district || selectedCase.district} · ${caseDetails.police_station || selectedCase.unit}`}
+                />
+                <Field label="Registered" value={caseDetails.date || selectedCase.registeredDate} mono />
+                <Field label="Accused" value={
+                  caseDetails.accused?.length 
+                    ? caseDetails.accused.map((a: any) => a.name).join(", ") 
+                    : selectedCase.accused
+                } highlight />
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-lo)] mb-1.5">
+                    Brief Facts
+                  </div>
+                  <p className="text-[12.5px] leading-relaxed text-[var(--color-text-hi)]">
+                    {caseDetails.description || selectedCase.briefFacts}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="p-3 border-t border-[var(--color-border-soft)] space-y-2">

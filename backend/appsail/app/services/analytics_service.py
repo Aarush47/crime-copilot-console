@@ -4,31 +4,33 @@ from app.utils.logger import logger
 class AnalyticsService:
     @staticmethod
     async def get_analytics() -> AnalyticsResponse:
-        logger.info("Fetching analytics data")
+        logger.info("Fetching analytics data from ZCQL")
         
-        return AnalyticsResponse(
-            crime_trend=[
-                TrendPoint(month="Jan", count=120),
-                TrendPoint(month="Feb", count=145),
-                TrendPoint(month="Mar", count=110),
-                TrendPoint(month="Apr", count=155)
-            ],
-            monthly_fir=155,
-            district_wise_crime={
-                "Bengaluru Urban": 500,
-                "Bengaluru Rural": 150,
-                "Mysuru": 300,
-                "Mangaluru": 250
-            },
-            crime_head_distribution={
-                "Cybercrime": 35,
-                "Theft": 25,
-                "Fraud": 20,
-                "Assault": 20
-            },
-            officer_performance={
-                "Inspector Raj": 85.5,
-                "Sub-Inspector Priya": 92.0,
-                "Inspector Kumar": 78.5
-            }
-        )
+        try:
+            from app.database.repositories.analytics_repository import AnalyticsRepository
+            db_data = await AnalyticsRepository.get_analytics_data()
+            
+            # Map trend points
+            trend_points = []
+            for item in db_data.get("crime_trend", []):
+                trend_points.append(TrendPoint(month=item["month"], count=item["count"]))
+                
+            # If no data, use some fallback or empty
+            monthly_fir = sum(t.count for t in trend_points) if trend_points else 0
+            
+            return AnalyticsResponse(
+                crime_trend=trend_points,
+                monthly_fir=monthly_fir,
+                district_wise_crime=db_data.get("district_wise_crime", {}),
+                crime_head_distribution=db_data.get("crime_head_distribution", {}),
+                officer_performance=db_data.get("officer_performance", {})
+            )
+        except Exception as e:
+            logger.error(f"Error in get_analytics: {e}")
+            return AnalyticsResponse(
+                crime_trend=[],
+                monthly_fir=0,
+                district_wise_crime={},
+                crime_head_distribution={},
+                officer_performance={}
+            )

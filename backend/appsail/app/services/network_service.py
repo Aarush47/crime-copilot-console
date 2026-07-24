@@ -6,14 +6,18 @@ class NetworkService:
     async def get_network(case_id: str) -> NetworkResponse:
         logger.info(f"Generating network graph for case {case_id}")
         
-        return NetworkResponse(
-            nodes=[
-                Node(data=NodeData(id="n1", label="Suspect A", type="person")),
-                Node(data=NodeData(id="n2", label="Phone 1234567890", type="phone")),
-                Node(data=NodeData(id="n3", label="Bank Acct 9999", type="account")),
-            ],
-            edges=[
-                Edge(data=EdgeData(source="n1", target="n2", label="owns")),
-                Edge(data=EdgeData(source="n1", target="n3", label="transferred to")),
-            ]
-        )
+        try:
+            from app.database.repositories.network_repository import NetworkRepository
+            graph_data = await NetworkRepository.get_network_for_case(case_id)
+            
+            # If no data found, return an empty graph instead of failing
+            if not graph_data["nodes"]:
+                return NetworkResponse(nodes=[], edges=[])
+                
+            nodes = [Node(data=NodeData(**n["data"])) for n in graph_data["nodes"]]
+            edges = [Edge(data=EdgeData(**e["data"])) for e in graph_data["edges"]]
+            
+            return NetworkResponse(nodes=nodes, edges=edges)
+        except Exception as e:
+            logger.error(f"Error in get_network: {e}")
+            return NetworkResponse(nodes=[], edges=[])

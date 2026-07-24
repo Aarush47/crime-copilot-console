@@ -47,8 +47,12 @@ async def upload_cases(files: List[UploadFile] = File(...)):
             elif is_case:
                 target_table = "cases"
                 for row in csv_reader:
+                    fir_raw = row.get("fir_no", "").strip()
+                    digits = "".join(filter(str.isdigit, fir_raw))
+                    fir_no_val = int(digits) if digits else 100
+                    
                     records_to_insert.append({
-                        "fir_no": row.get("fir_no", "").strip(),
+                        "fir_no": fir_no_val,
                         "district": row.get("district", "").strip(),
                         "ps_jurisdiction": row.get("ps_jurisdiction", "").strip(),
                         "crime_type": row.get("crime_type", "").strip(),

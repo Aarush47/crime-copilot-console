@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from app.routes import health, chat, dashboard, cases, network, analytics, export, auth, upload
+from app.routes import health, chat, dashboard, cases, network, analytics, export, auth, upload, audit
 from app.middleware.cors import add_cors_middleware
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.auth import AuthMiddleware
@@ -68,6 +68,7 @@ def create_app() -> FastAPI:
     app.include_router(analytics.router, prefix="/api")
     app.include_router(export.router, prefix="/api")
     app.include_router(upload.router, prefix="/api")
+    app.include_router(audit.router, prefix="/api")
 
     return app
 
