@@ -15,6 +15,22 @@ class CaseRepository:
             return []
             
         try:
+            # Fetch all lookup tables first (they are small)
+            try:
+                crime_heads = {str(r.get("CrimeHead", {}).get("CrimeHeadID")): r.get("CrimeHead", {}).get("CrimeGroupName") for r in zcql.execute_query("SELECT CrimeHeadID, CrimeGroupName FROM CrimeHead")}
+            except Exception:
+                crime_heads = {}
+                
+            try:
+                statuses = {str(r.get("CaseStatusMaster", {}).get("CaseStatusID")): r.get("CaseStatusMaster", {}).get("CaseStatusName") for r in zcql.execute_query("SELECT CaseStatusID, CaseStatusName FROM CaseStatusMaster")}
+            except Exception:
+                statuses = {}
+                
+            try:
+                units = {str(r.get("Unit", {}).get("UnitID")): r.get("Unit", {}).get("UnitName") for r in zcql.execute_query("SELECT UnitID, UnitName FROM Unit")}
+            except Exception:
+                units = {}
+
             query = """
                 SELECT 
                     CaseMaster.ROWID, 
@@ -23,25 +39,16 @@ class CaseRepository:
                     CaseMaster.longitude, 
                     CaseMaster.BriefFacts, 
                     CaseMaster.CrimeRegisteredDate,
-                    CrimeHead.CrimeGroupName,
-                    CaseStatusMaster.CaseStatusName,
-                    Unit.UnitName,
-                    District.DistrictName
+                    CaseMaster.CrimeMajorHeadID,
+                    CaseMaster.CaseStatusID,
+                    CaseMaster.PoliceStationID
                 FROM CaseMaster
-                LEFT JOIN CrimeHead ON CaseMaster.CrimeMajorHeadID = CrimeHead.ROWID
-                LEFT JOIN CaseStatusMaster ON CaseMaster.CaseStatusID = CaseStatusMaster.ROWID
-                LEFT JOIN Unit ON CaseMaster.PoliceStationID = Unit.ROWID
-                LEFT JOIN District ON Unit.DistrictID = District.ROWID
             """
             result = zcql.execute_query(query)
             
             cases_list = []
             for row in result:
                 cm = row.get("CaseMaster", {})
-                ch = row.get("CrimeHead", {})
-                csm = row.get("CaseStatusMaster", {})
-                un = row.get("Unit", {})
-                dist = row.get("District", {})
                 
                 lat = float(cm.get("latitude", 12.9716) or 12.9716)
                 lng = float(cm.get("longitude", 77.5946) or 77.5946)
@@ -54,10 +61,10 @@ class CaseRepository:
                     "brief_facts": cm.get("BriefFacts"),
                     "registered_at": cm.get("CrimeRegisteredDate"),
                     "severity": "high",
-                    "status": csm.get("CaseStatusName", "Unknown"),
-                    "district": dist.get("DistrictName", "Unknown"),
-                    "ps_jurisdiction": un.get("UnitName", "Unknown"),
-                    "crime_type": ch.get("CrimeGroupName", "Various")
+                    "status": statuses.get(str(cm.get("CaseStatusID")), "Unknown"),
+                    "district": "Unknown", # District mapping requires an extra hop through Unit
+                    "ps_jurisdiction": units.get(str(cm.get("PoliceStationID")), "Unknown"),
+                    "crime_type": crime_heads.get(str(cm.get("CrimeMajorHeadID")), "Various")
                 }
                 cases_list.append(case_data)
             

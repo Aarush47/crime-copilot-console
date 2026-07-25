@@ -639,6 +639,9 @@ function ExportReports() {
             const res = await api.uploadChunk(tableName, chunk);
             fileInserted += res.inserted || 0;
             fileFailed += res.failed || 0;
+            if (res.errors && res.errors.length > 0) {
+              console.error(`Chunk upload errors for ${tableName}:`, res.errors);
+            }
             totalInserted += res.inserted || 0;
             totalFailed += res.failed || 0;
           } catch (err: any) {
