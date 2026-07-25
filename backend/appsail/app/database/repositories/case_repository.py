@@ -15,7 +15,6 @@ class CaseRepository:
             return []
             
         try:
-            # Query the new normalized schema
             query = """
                 SELECT 
                     CaseMaster.ROWID, 
@@ -24,21 +23,26 @@ class CaseRepository:
                     CaseMaster.longitude, 
                     CaseMaster.BriefFacts, 
                     CaseMaster.CrimeRegisteredDate,
-                    GravityOffence.LookupValue,
-                    CaseStatusMaster.CaseStatusName
+                    CrimeHead.CrimeGroupName,
+                    CaseStatusMaster.CaseStatusName,
+                    Unit.UnitName,
+                    District.DistrictName
                 FROM CaseMaster
-                LEFT JOIN GravityOffence ON CaseMaster.GravityOffenceID = GravityOffence.ROWID
+                LEFT JOIN CrimeHead ON CaseMaster.CrimeMajorHeadID = CrimeHead.ROWID
                 LEFT JOIN CaseStatusMaster ON CaseMaster.CaseStatusID = CaseStatusMaster.ROWID
+                LEFT JOIN Unit ON CaseMaster.PoliceStationID = Unit.ROWID
+                LEFT JOIN District ON Unit.DistrictID = District.ROWID
             """
             result = zcql.execute_query(query)
             
             cases_list = []
             for row in result:
                 cm = row.get("CaseMaster", {})
-                go = row.get("GravityOffence", {})
+                ch = row.get("CrimeHead", {})
                 csm = row.get("CaseStatusMaster", {})
+                un = row.get("Unit", {})
+                dist = row.get("District", {})
                 
-                # Catalyst ZCQL returns decimals as strings or floats.
                 lat = float(cm.get("latitude", 12.9716) or 12.9716)
                 lng = float(cm.get("longitude", 77.5946) or 77.5946)
                 
@@ -49,12 +53,11 @@ class CaseRepository:
                     "longitude": lng,
                     "brief_facts": cm.get("BriefFacts"),
                     "registered_at": cm.get("CrimeRegisteredDate"),
-                    "severity": go.get("LookupValue", "low"),
+                    "severity": "high",
                     "status": csm.get("CaseStatusName", "Unknown"),
-                    # Hardcode district/ps for now since those require deep joins to Unit/District tables
-                    "district": "Bengaluru City",
-                    "ps_jurisdiction": "Central",
-                    "crime_type": "Various"
+                    "district": dist.get("DistrictName", "Unknown"),
+                    "ps_jurisdiction": un.get("UnitName", "Unknown"),
+                    "crime_type": ch.get("CrimeGroupName", "Various")
                 }
                 cases_list.append(case_data)
             
@@ -78,56 +81,126 @@ class CaseRepository:
                     CaseMaster.longitude, 
                     CaseMaster.BriefFacts, 
                     CaseMaster.CrimeRegisteredDate,
-                    GravityOffence.LookupValue,
-                    CaseStatusMaster.CaseStatusName
+                    CrimeHead.CrimeGroupName,
+                    CaseStatusMaster.CaseStatusName,
+                    Unit.UnitName,
+                    District.DistrictName
                 FROM CaseMaster
-                LEFT JOIN GravityOffence ON CaseMaster.GravityOffenceID = GravityOffence.ROWID
+                LEFT JOIN CrimeHead ON CaseMaster.CrimeMajorHeadID = CrimeHead.ROWID
                 LEFT JOIN CaseStatusMaster ON CaseMaster.CaseStatusID = CaseStatusMaster.ROWID
+                LEFT JOIN Unit ON CaseMaster.PoliceStationID = Unit.ROWID
+                LEFT JOIN District ON Unit.DistrictID = District.ROWID
                 WHERE CaseMaster.ROWID = '{case_id}'
             """
             result = zcql.execute_query(query)
-            if result and len(result) > 0:
-                row = result[0]
-                cm = row.get("CaseMaster", {})
-                go = row.get("GravityOffence", {})
-                csm = row.get("CaseStatusMaster", {})
+            if not result or len(result) == 0:
+                return {}
                 
-                lat = float(cm.get("latitude", 12.9716) or 12.9716)
-                lng = float(cm.get("longitude", 77.5946) or 77.5946)
-                    
-                case_data = {
-                    "ROWID": cm.get("ROWID"),
-                    "fir_no": cm.get("CrimeNo"),
-                    "latitude": lat,
-                    "longitude": lng,
-                    "brief_facts": cm.get("BriefFacts"),
-                    "registered_at": cm.get("CrimeRegisteredDate"),
-                    "severity": go.get("LookupValue", "low"),
-                    "status": csm.get("CaseStatusName", "Unknown"),
-                    "district": "Bengaluru City",
-                    "ps_jurisdiction": "Central",
-                    "crime_type": "Various"
-                }
+            row = result[0]
+            cm = row.get("CaseMaster", {})
+            ch = row.get("CrimeHead", {})
+            csm = row.get("CaseStatusMaster", {})
+            un = row.get("Unit", {})
+            dist = row.get("District", {})
+            
+            lat = float(cm.get("latitude", 12.9716) or 12.9716)
+            lng = float(cm.get("longitude", 77.5946) or 77.5946)
                 
-                # Fetch accused
-                accused_query = f"SELECT ROWID, AccusedName, AgeYear FROM Accused WHERE CaseMasterID = '{case_id}'"
-                try:
-                    accused_res = zcql.execute_query(accused_query)
-                    accused_list = []
-                    for a_row in accused_res:
-                        a = a_row.get("Accused", {})
-                        accused_list.append({
-                            "accused_id": str(a.get("ROWID", "")),
-                            "name": str(a.get("AccusedName", "Unknown")),
-                            "age": str(a.get("AgeYear", ""))
-                        })
-                    case_data["accused"] = accused_list
-                except Exception as ae:
-                    logger.warning(f"Failed to fetch accused for {case_id}: {ae}")
-                    case_data["accused"] = []
-                    
-                return case_data
-            return {}
+            case_data = {
+                "ROWID": cm.get("ROWID"),
+                "fir_no": cm.get("CrimeNo"),
+                "latitude": lat,
+                "longitude": lng,
+                "brief_facts": cm.get("BriefFacts"),
+                "registered_at": cm.get("CrimeRegisteredDate"),
+                "severity": "high",
+                "status": csm.get("CaseStatusName", "Unknown"),
+                "district": dist.get("DistrictName", "Unknown"),
+                "ps_jurisdiction": un.get("UnitName", "Unknown"),
+                "crime_type": ch.get("CrimeGroupName", "Various")
+            }
+            
+            # Fetch Accused
+            try:
+                acc_query = f"SELECT ROWID, AccusedName, AgeYear FROM Accused WHERE CaseMasterID = '{case_id}'"
+                acc_res = zcql.execute_query(acc_query)
+                case_data["accused"] = [
+                    {
+                        "accused_id": str(r.get("Accused", {}).get("ROWID", "")),
+                        "name": str(r.get("Accused", {}).get("AccusedName", "Unknown")),
+                        "age": str(r.get("Accused", {}).get("AgeYear", ""))
+                    } for r in acc_res
+                ]
+            except Exception as e:
+                case_data["accused"] = []
+
+            # Fetch Victims
+            try:
+                vic_query = f"SELECT ROWID, VictimName FROM Victim WHERE CaseMasterID = '{case_id}'"
+                vic_res = zcql.execute_query(vic_query)
+                case_data["victims"] = [
+                    {
+                        "victim_id": str(r.get("Victim", {}).get("ROWID", "")),
+                        "name": str(r.get("Victim", {}).get("VictimName", "Unknown"))
+                    } for r in vic_res
+                ]
+            except Exception as e:
+                case_data["victims"] = []
+
+            # Fetch Complainant
+            try:
+                comp_query = f"SELECT ROWID, ComplainantName FROM ComplainantDetails WHERE CaseMasterID = '{case_id}'"
+                comp_res = zcql.execute_query(comp_query)
+                case_data["complainants"] = [
+                    {
+                        "complainant_id": str(r.get("ComplainantDetails", {}).get("ROWID", "")),
+                        "name": str(r.get("ComplainantDetails", {}).get("ComplainantName", "Unknown"))
+                    } for r in comp_res
+                ]
+            except Exception as e:
+                case_data["complainants"] = []
+                
+            # Fetch Chargesheet Details
+            try:
+                cs_query = f"SELECT ROWID, ChargeSheetNumber, ChargeSheetDate FROM ChargesheetDetails WHERE CaseMasterID = '{case_id}'"
+                cs_res = zcql.execute_query(cs_query)
+                case_data["chargesheets"] = [
+                    {
+                        "chargesheet_id": str(r.get("ChargesheetDetails", {}).get("ROWID", "")),
+                        "number": str(r.get("ChargesheetDetails", {}).get("ChargeSheetNumber", "")),
+                        "date": str(r.get("ChargesheetDetails", {}).get("ChargeSheetDate", ""))
+                    } for r in cs_res
+                ]
+            except Exception as e:
+                case_data["chargesheets"] = []
+
+            # Fetch ArrestSurrender Details
+            try:
+                ar_query = f"SELECT ROWID, ArrestDate FROM ArrestSurrender WHERE CaseMasterID = '{case_id}'"
+                ar_res = zcql.execute_query(ar_query)
+                case_data["arrests"] = [
+                    {
+                        "arrest_id": str(r.get("ArrestSurrender", {}).get("ROWID", "")),
+                        "date": str(r.get("ArrestSurrender", {}).get("ArrestDate", ""))
+                    } for r in ar_res
+                ]
+            except Exception as e:
+                case_data["arrests"] = []
+
+            # Fetch ActSection Details
+            try:
+                act_query = f"SELECT ROWID, ActSectionName FROM ActSectionAssociation WHERE CaseMasterID = '{case_id}'"
+                act_res = zcql.execute_query(act_query)
+                case_data["act_sections"] = [
+                    {
+                        "act_id": str(r.get("ActSectionAssociation", {}).get("ROWID", "")),
+                        "name": str(r.get("ActSectionAssociation", {}).get("ActSectionName", ""))
+                    } for r in act_res
+                ]
+            except Exception as e:
+                case_data["act_sections"] = []
+
+            return case_data
         except Exception as e:
             logger.error(f"Failed to fetch case {case_id}: {e}")
             return {}
@@ -139,31 +212,27 @@ class CaseRepository:
             return []
             
         try:
-            # We can't easily group by JOIN results in simple ZCQL sometimes, but let's try.
-            # If group by fails, we just select all and group in Python.
             query = """
                 SELECT 
                     CaseMaster.latitude,
                     CaseMaster.longitude,
-                    GravityOffence.LookupValue
+                    CrimeHead.CrimeGroupName
                 FROM CaseMaster
-                LEFT JOIN GravityOffence ON CaseMaster.GravityOffenceID = GravityOffence.ROWID
+                LEFT JOIN CrimeHead ON CaseMaster.CrimeMajorHeadID = CrimeHead.ROWID
             """
             result = zcql.execute_query(query)
             
-            # Grouping in memory since ZCQL has strict rules about GROUP BY with JOINs
             from collections import defaultdict
             spots = defaultdict(int)
             
             for row in result:
                 cm = row.get("CaseMaster", {})
-                go = row.get("GravityOffence", {})
+                ch = row.get("CrimeHead", {})
                 
                 lat = float(cm.get("latitude", 12.9716) or 12.9716)
                 lng = float(cm.get("longitude", 77.5946) or 77.5946)
-                sev = go.get("LookupValue", "low")
+                sev = ch.get("CrimeGroupName", "Various")
                 
-                # Create a composite key
                 key = (lat, lng, sev)
                 spots[key] += 1
                 
@@ -172,39 +241,11 @@ class CaseRepository:
                 hotspots.append({
                     "latitude": lat,
                     "longitude": lng,
-                    "severity": sev,
-                    "crime_count": count
+                    "severity": "high",
+                    "crime_count": count,
+                    "crime_type": sev
                 })
             return hotspots
         except Exception as e:
             logger.error(f"Failed to execute ZCQL query for hotspots: {e}")
             return []
-
-    @staticmethod
-    async def insert_cases(cases_to_insert: List[Dict[str, Any]]) -> int:
-        datastore = db.get_datastore()
-        if not datastore:
-            logger.warning("Datastore not available. Cannot insert cases.")
-            return 0
-            
-        try:
-            table = datastore.table_meta("cases")
-            # Insert in chunks of 50 to avoid any limits
-            chunk_size = 50
-            inserted = 0
-            for i in range(0, len(cases_to_insert), chunk_size):
-                chunk = cases_to_insert[i:i + chunk_size]
-                # Catalyst SDK usually takes a list of dictionaries
-                res = table.insert_rows(chunk)
-                inserted += len(res) if isinstance(res, list) else len(chunk)
-            return inserted
-        except Exception as e:
-            logger.error(f"Failed to insert cases: {e}")
-            # If the specific table_meta doesn't work, maybe just .table('cases').insert_rows(chunk)
-            try:
-                table = datastore.table("cases")
-                res = table.insert_rows(cases_to_insert)
-                return len(res) if isinstance(res, list) else len(cases_to_insert)
-            except Exception as e2:
-                logger.error(f"Fallback insert also failed: {e2}")
-                raise e2

@@ -69,6 +69,19 @@ export const api = {
     return res.json();
   },
 
+  async uploadChunk(tableName: string, rows: any[]): Promise<{ inserted: number, failed: number, errors: string[] }> {
+    const res = await fetch(`${API_BASE}/api/upload/chunk`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table_name: tableName, rows }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to upload chunk");
+    }
+    return res.json();
+  },
+
   async getCaseDetails(caseId: string) {
     const res = await fetch(`${API_BASE}/api/case/${caseId}`);
     if (!res.ok) throw new Error("Failed to fetch case details");

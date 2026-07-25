@@ -83,6 +83,33 @@ class NetworkRepository:
                         })
             except Exception as e:
                 logger.warning(f"Failed to fetch victims for network: {e}")
+                
+            # 4. Add Complainant nodes linked to this case
+            query_comp = f"SELECT ROWID, ComplainantName FROM ComplainantDetails WHERE CaseMasterID = '{case_id}'"
+            try:
+                comp_res = zcql.execute_query(query_comp)
+                for row in comp_res:
+                    comp_data = row.get("ComplainantDetails", {})
+                    comp_id = comp_data.get("ROWID", "")
+                    name = comp_data.get("ComplainantName", "Unknown Complainant")
+                    
+                    if comp_id:
+                        nodes.append({
+                            "data": {
+                                "id": f"complainant_{comp_id}",
+                                "label": f"Complainant: {name}",
+                                "type": "person"
+                            }
+                        })
+                        edges.append({
+                            "data": {
+                                "source": f"complainant_{comp_id}",
+                                "target": f"case_{case_id}",
+                                "label": "complained"
+                            }
+                        })
+            except Exception as e:
+                logger.warning(f"Failed to fetch complainants for network: {e}")
             
             return {"nodes": nodes, "edges": edges}
             

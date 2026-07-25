@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useCopilot } from "@/lib/copilot-store";
 import { initialChat, type ChatMessage, type Alert } from "@/lib/mock-data";
 import { api } from "@/lib/api";
+import Papa from "papaparse";
 import {
   Send,
   Mic,
@@ -588,21 +589,84 @@ function AuditLog() {
 function ExportReports() {
   const [toast, setToast] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [progressText, setProgressText] = useState("");
+  const [progressVal, setProgressVal] = useState(0);
   
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
     setUploading(true);
-    setToast(`Uploading ${files.length} file(s) to database...`);
+    setProgressVal(0);
+    setProgressText(`Preparing to upload ${files.length} file(s)...`);
     
     try {
-      const res = await api.uploadCases(files);
-      setToast(`✓ Success: ${res.inserted} records inserted.`);
+      const fileArray = Array.from(files);
+      let totalInserted = 0;
+      let totalFailed = 0;
+      let globalStartTime = Date.now();
+      
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        const tableName = file.name.replace(/\.[^/.]+$/, ""); // strip extension
+        
+        // Use a Promise to wrap the Papa.parse call
+        const parsedRows = await new Promise<any[]>((resolve, reject) => {
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => resolve(results.data),
+            error: (err: any) => reject(err),
+          });
+        });
+        
+        const totalRows = parsedRows.length;
+        if (totalRows === 0) continue;
+        
+        const chunkSize = 100;
+        let fileInserted = 0;
+        let fileFailed = 0;
+        
+        for (let j = 0; j < totalRows; j += chunkSize) {
+          const chunk = parsedRows.slice(j, j + chunkSize);
+          
+          setProgressText(
+            `File ${i+1}/${fileArray.length} (${tableName}): Uploading ${Math.min(j + chunkSize, totalRows)} / ${totalRows} rows`
+          );
+          setProgressVal(Math.round(((j) / totalRows) * 100));
+          
+          try {
+            const res = await api.uploadChunk(tableName, chunk);
+            fileInserted += res.inserted || 0;
+            fileFailed += res.failed || 0;
+            totalInserted += res.inserted || 0;
+            totalFailed += res.failed || 0;
+          } catch (err: any) {
+             console.error(`Chunk failed for ${tableName}:`, err);
+             fileFailed += chunk.length;
+             totalFailed += chunk.length;
+          }
+          
+          // Estimate ETA
+          const elapsedSec = (Date.now() - globalStartTime) / 1000;
+          const rowsProcessedSoFar = totalInserted + totalFailed;
+          if (rowsProcessedSoFar > 0) {
+            const speed = rowsProcessedSoFar / elapsedSec; // rows per sec
+            const estimatedTotalRows = fileArray.length * totalRows; // Rough estimate if multiple files
+            const remaining = Math.max(0, estimatedTotalRows - rowsProcessedSoFar);
+            const etaSec = Math.round(remaining / speed);
+            setProgressText(prev => prev + ` | ETA: ${etaSec}s`);
+          }
+        }
+        
+        setProgressVal(100);
+      }
+      
+      setToast(`✓ Success: ${totalInserted} inserted, ${totalFailed} failed.`);
     } catch (err: any) {
       setToast(`✗ Upload failed: ${err.message}`);
     } finally {
-      setUploading(false);
+      setTimeout(() => setUploading(false), 2000);
       e.target.value = ''; // Reset input
     }
   };
@@ -687,6 +751,21 @@ function ExportReports() {
           {uploading ? "Uploading..." : "Select CSV Files"}
           <input type="file" accept=".csv" multiple className="hidden" onChange={handleFileUpload} disabled={uploading} />
         </label>
+        
+        {uploading && (
+          <div className="mt-3">
+            <div className="flex justify-between text-[10px] text-[var(--color-text-lo)] mb-1">
+              <span className="truncate pr-2">{progressText}</span>
+              <span>{progressVal}%</span>
+            </div>
+            <div className="w-full bg-[var(--color-bg-3)] h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-[var(--color-amber)] h-full transition-all duration-300"
+                style={{ width: `${progressVal}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
       </div>
 
       {cards.map((c) => {
