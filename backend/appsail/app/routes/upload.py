@@ -138,12 +138,27 @@ async def upload_chunk(payload: ChunkPayload):
         failed_rows = 0
         error_details = []
         
-        # Inject Active: True and ensure strings are handled gracefully
+        # Fetch actual schema columns
+        try:
+            schema_cols = table.get_all_columns()
+            valid_columns = {c.get("column_name") for c in schema_cols}
+        except Exception as e:
+            logger.error(f"Failed to fetch schema for {payload.table_name}: {e}")
+            valid_columns = None # Fallback to no filtering if schema fetch fails
+            
         processed_rows = []
         for row in payload.rows:
-            new_row = dict(row)
-            if "Active" not in new_row:
-                new_row["Active"] = True
+            new_row = {}
+            for k, v in row.items():
+                # Filter out invalid columns
+                if valid_columns is None or k in valid_columns:
+                    new_row[k] = v
+            
+            # Auto-inject Active=True only if Active is a valid column
+            if valid_columns is None or "Active" in valid_columns:
+                if "Active" not in new_row:
+                    new_row["Active"] = True
+                    
             processed_rows.append(new_row)
         
         # We assume the frontend chunked it, but we can safely insert the whole payload.rows
