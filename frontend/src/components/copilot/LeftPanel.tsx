@@ -38,7 +38,7 @@ export function LeftPanel() {
         {activeTab === "chat" && <Chat />}
         {activeTab === "filters" && <Filters />}
         {activeTab === "network" && <NetworkGraph />}
-        {activeTab === "audit" && <AuditLog />}
+        {activeTab === "cases" && <CaseLedger />}
         {activeTab === "export" && <ExportReports />}
       </div>
     </div>
@@ -84,7 +84,7 @@ function Overview() {
             Recent Alerts
           </div>
           <button 
-            onClick={() => useCopilot.getState().setActiveTab('audit')} 
+            onClick={() => useCopilot.getState().setActiveTab('cases')} 
             className="font-mono text-[10px] text-[var(--color-amber)] hover:underline"
           >
             VIEW ALL
@@ -544,43 +544,53 @@ function LegendDot({ color, label, dashed }: { color: string; label: string; das
   );
 }
 
-function AuditLog() {
-  const [entries, setEntries] = useState<any[]>([]);
-
-  useEffect(() => {
-    api.getAuditLogs().then(setEntries).catch(console.error);
-  }, []);
+function CaseLedger() {
+  const { cases, selectCase } = useCopilot();
 
   return (
     <div className="h-full overflow-y-auto scrollbar-thin p-4 space-y-3">
-      {entries.map((e, i) => (
-        <div
-          key={e.id || i}
-          className="rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] overflow-hidden"
-        >
-          <div className="px-3 py-2 border-b border-[var(--color-border-soft)] flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-lo)]">
-              {e.action || `Action ${String(i + 1).padStart(3, "0")}`}
-            </span>
-            <span className="font-mono text-[10px] text-[var(--color-text-mid)]">{e.timestamp || "Recent"}</span>
-          </div>
-          <div className="px-3 py-2 text-[12px] text-[var(--color-text-hi)] italic">"{e.details || "System action"}"</div>
-          {e.user && (
-            <div
-              className="border-l-2 border-[var(--color-amber)] mx-3 mb-3 rounded-r overflow-hidden"
-              style={{ backgroundColor: "#080b0e" }}
-            >
-              <div className="px-2.5 py-1 flex items-center gap-2 border-b border-[var(--color-border-soft)]">
-                <span className="font-mono text-[9.5px] text-[var(--color-amber)]">
-                  User: {e.user}
+      {cases.map((c, i) => {
+        const s = sevPill[c.severity] || sevPill.low;
+        return (
+          <div
+            key={c.id || i}
+            onClick={() => selectCase(c)}
+            className="cursor-pointer rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] hover:border-[var(--color-amber-dim)] overflow-hidden transition-colors"
+          >
+            <div className="px-3 py-2 border-b border-[var(--color-border-soft)] flex items-center justify-between">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-lo)]">
+                {c.id}
+              </span>
+              <span
+                className="font-mono text-[9.5px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider"
+                style={{ backgroundColor: s.bg, color: s.fg }}
+              >
+                {c.severity}
+              </span>
+            </div>
+            <div className="px-3 py-2">
+              <div className="text-[12px] font-semibold text-[var(--color-text-hi)] mb-1">
+                {c.crimeType} - {c.unit}
+              </div>
+              <div className="text-[11px] text-[var(--color-text-mid)] line-clamp-2 italic mb-2">
+                "{c.briefFacts}"
+              </div>
+              <div className="flex items-center gap-4 mt-2">
+                <span className="font-mono text-[9.5px] text-[var(--color-text-lo)] flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-amber)]" />
+                  Status: {c.status}
+                </span>
+                <span className="font-mono text-[9.5px] text-[var(--color-text-lo)] flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-text-lo)]" />
+                  Date: {new Date(c.registeredDate).toLocaleDateString()}
                 </span>
               </div>
             </div>
-          )}
-        </div>
-      ))}
-      {entries.length === 0 && (
-        <div className="text-[12px] text-[var(--color-text-lo)] italic">No audit logs found.</div>
+          </div>
+        );
+      })}
+      {cases.length === 0 && (
+        <div className="text-[12px] text-[var(--color-text-lo)] italic">No cases found.</div>
       )}
     </div>
   );

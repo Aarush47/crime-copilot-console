@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { CaseMarker } from "./mock-data";
 import { api } from "./api";
 
-export type RailTab = "overview" | "chat" | "filters" | "network" | "audit" | "export";
+export type RailTab = "overview" | "chat" | "filters" | "network" | "cases" | "export";
 
 interface CopilotState {
   activeTab: RailTab;

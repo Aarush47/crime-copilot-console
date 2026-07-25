@@ -14,7 +14,7 @@ const items: { id: RailTab; icon: typeof Shield; label: string }[] = [
   { id: "chat", icon: MessageSquare, label: "Copilot Chat" },
   { id: "filters", icon: SlidersHorizontal, label: "Filters" },
   { id: "network", icon: Network, label: "Network Graph" },
-  { id: "audit", icon: ScrollText, label: "Audit Log" },
+  { id: "cases", icon: ScrollText, label: "All Cases" },
   { id: "export", icon: FileDown, label: "Export & Reports" },
 ];
 
