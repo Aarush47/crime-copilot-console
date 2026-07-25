@@ -97,18 +97,19 @@ async def get_schema(table_name: str):
         if not datastore:
             raise HTTPException(status_code=500, detail="Datastore SDK unavailable")
             
-        meta = datastore.table_meta(table_name)
+        table = datastore.table(table_name)
+        cols = table.get_all_columns()
         return {
             "table_name": table_name,
             "columns": [
                 {
-                    "name": c.column_name,
-                    "type": c.data_type,
-                    "max_length": c.max_length,
-                    "is_mandatory": c.is_mandatory,
-                    "is_unique": c.is_unique
+                    "name": c.get("column_name"),
+                    "type": c.get("data_type"),
+                    "max_length": c.get("max_length"),
+                    "is_mandatory": c.get("is_mandatory"),
+                    "is_unique": c.get("is_unique")
                 }
-                for c in meta.column_details
+                for c in cols
             ]
         }
     except Exception as e:

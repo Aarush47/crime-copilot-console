@@ -3,9 +3,10 @@ import asyncio
 
 async def test():
     try:
-        datastore = db.get_datastore()
-        table = datastore.table("CaseMaster")
-        print(dir(table))
+        zcql = db.get_zcql()
+        query = "SELECT CaseMaster.ROWID, CaseMaster.CrimeNo, CaseMaster.latitude, CaseMaster.longitude, CaseMaster.BriefFacts, CaseMaster.CrimeRegisteredDate, CaseMaster.CrimeMajorHeadID, CaseMaster.CaseStatusID, CaseMaster.PoliceStationID FROM CaseMaster"
+        res = zcql.execute_query(query)
+        print("Success:", res)
     except Exception as e:
         print(f"Error: {e}")
 

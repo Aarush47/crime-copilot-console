@@ -31,16 +31,15 @@ class CaseRepository:
             except Exception:
                 units = {}
 
+            # Select ONLY columns that actually exist in the Catalyst Datastore
             query = """
                 SELECT 
                     CaseMaster.ROWID, 
-                    CaseMaster.CrimeNo, 
                     CaseMaster.latitude, 
                     CaseMaster.longitude, 
                     CaseMaster.BriefFacts, 
                     CaseMaster.CrimeRegisteredDate,
-                    CaseMaster.CrimeMajorHeadID,
-                    CaseMaster.CaseStatusID,
+                    CaseMaster.CaseStatus,
                     CaseMaster.PoliceStationID
                 FROM CaseMaster
             """
@@ -55,23 +54,24 @@ class CaseRepository:
                 
                 case_data = {
                     "ROWID": cm.get("ROWID"),
-                    "fir_no": cm.get("CrimeNo"),
+                    "fir_no": f"FIR-{cm.get('ROWID', 'UNKNOWN')[-5:]}" if cm.get("ROWID") else "FIR-UNKNOWN", # Mock CrimeNo since it is missing
                     "latitude": lat,
                     "longitude": lng,
                     "brief_facts": cm.get("BriefFacts"),
                     "registered_at": cm.get("CrimeRegisteredDate"),
                     "severity": "high",
-                    "status": statuses.get(str(cm.get("CaseStatusID")), "Unknown"),
+                    "status": statuses.get(str(cm.get("CaseStatus")), "Unknown"),
                     "district": "Unknown", # District mapping requires an extra hop through Unit
                     "ps_jurisdiction": units.get(str(cm.get("PoliceStationID")), "Unknown"),
-                    "crime_type": crime_heads.get(str(cm.get("CrimeMajorHeadID")), "Various")
+                    "crime_type": "Unknown" # CrimeMajorHeadID is missing from schema
                 }
                 cases_list.append(case_data)
             
             return cases_list
         except Exception as e:
             logger.error(f"Failed to execute ZCQL query for cases: {e}")
-            return []
+            from fastapi import HTTPException
+            raise HTTPException(status_code=500, detail=f"ZCQL ERROR: {str(e)}")
             
     @staticmethod
     async def get_case_by_id(case_id: str) -> Dict[str, Any]:

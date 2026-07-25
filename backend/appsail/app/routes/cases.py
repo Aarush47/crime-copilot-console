@@ -18,6 +18,17 @@ router = APIRouter(tags=["Cases & Maps"])
 async def get_cases():
     return await CaseService.get_all_cases()
 
+@router.get("/cases_raw")
+async def get_cases_raw():
+    from app.database.connection import db
+    datastore = db.get_datastore()
+    table = datastore.table("CaseMaster")
+    try:
+        details = table.get_column_details()
+        return [c.get("COLUMN_NAME") for c in details] if details else []
+    except Exception as e:
+        return {"error": str(e)}
+
 
 @router.get(
     "/case/{caseId}",

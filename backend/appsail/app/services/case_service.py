@@ -1,6 +1,7 @@
 from app.schemas.cases import CaseResponse, HotspotResponse, HotspotData
-from typing import List
+from typing import List, Dict, Any
 from app.utils.logger import logger
+from fastapi import HTTPException
 
 class CaseService:
     @staticmethod
