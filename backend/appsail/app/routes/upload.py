@@ -152,6 +152,12 @@ async def upload_chunk(payload: ChunkPayload):
             for k, v in row.items():
                 # Filter out invalid columns
                 if valid_columns is None or k in valid_columns:
+                    # Cast known boolean columns
+                    if k in ["Active", "IsAccused", "IsComplainantAccused", "PhysicallyChallenged"]:
+                        if str(v).lower() in ["1", "true", "t", "yes", "y"]:
+                            v = True
+                        elif str(v).lower() in ["0", "false", "f", "no", "n"]:
+                            v = False
                     new_row[k] = v
             
             # Auto-inject Active=True only if Active is a valid column
