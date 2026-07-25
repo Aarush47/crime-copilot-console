@@ -30,24 +30,13 @@ export function TopBar() {
 
       <div className="panel-float px-2 py-1.5 flex items-center gap-1">
         <button
-          onClick={() => setLanguage("en")}
           className="px-2 py-1 rounded font-mono text-[11px] uppercase"
           style={{
-            backgroundColor: language === "en" ? "var(--color-bg-3)" : "transparent",
-            color: language === "en" ? "var(--color-amber)" : "var(--color-text-mid)",
+            backgroundColor: "var(--color-bg-3)",
+            color: "var(--color-amber)",
           }}
         >
           EN
-        </button>
-        <button
-          onClick={() => setLanguage("kn")}
-          className="px-2 py-1 rounded text-[11px]"
-          style={{
-            backgroundColor: language === "kn" ? "var(--color-bg-3)" : "transparent",
-            color: language === "kn" ? "var(--color-amber)" : "var(--color-text-mid)",
-          }}
-        >
-          ಕನ್ನಡ
         </button>
       </div>
 
