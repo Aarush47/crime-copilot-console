@@ -17,19 +17,19 @@ export const api = {
     const data = await res.json();
     
     return data.map((c: any) => ({
-      id: c.case_id,
-      district: c.district,
+      id: c.ROWID || c.fir_no || "unknown",
+      district: c.district || "Unknown",
       position: { top: "50%", left: "50%" }, // Not heavily used if we use real map lat/lng
-      lat: c.latitude,
-      lng: c.longitude,
-      severity: c.severity,
+      lat: c.latitude || 12.9716,
+      lng: c.longitude || 77.5946,
+      severity: c.severity || "low",
       caseCount: 1,
-      crimeType: c.crime_head,
-      unit: c.police_station,
-      status: c.status,
-      registeredDate: c.date,
+      crimeType: c.crime_type || "Various",
+      unit: c.ps_jurisdiction || "Unknown",
+      status: c.status || "Unknown",
+      registeredDate: c.registered_at || new Date().toISOString(),
       accused: "Unknown",
-      briefFacts: c.description,
+      briefFacts: c.brief_facts || "No description provided",
     }));
   },
 

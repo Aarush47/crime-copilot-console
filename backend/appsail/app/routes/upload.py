@@ -138,14 +138,22 @@ async def upload_chunk(payload: ChunkPayload):
         failed_rows = 0
         error_details = []
         
+        # Inject Active: True and ensure strings are handled gracefully
+        processed_rows = []
+        for row in payload.rows:
+            new_row = dict(row)
+            if "Active" not in new_row:
+                new_row["Active"] = True
+            processed_rows.append(new_row)
+        
         # We assume the frontend chunked it, but we can safely insert the whole payload.rows
         # Catalyst limit per insert_rows is usually around 100-200.
         try:
-            res = table.insert_rows(payload.rows)
-            inserted_count = len(res) if isinstance(res, list) else len(payload.rows)
+            res = table.insert_rows(processed_rows)
+            inserted_count = len(res) if isinstance(res, list) else len(processed_rows)
         except Exception as chunk_e:
             logger.warning(f"Chunk bulk insert failed for {payload.table_name}, trying row by row. Error: {chunk_e}")
-            for row_data in payload.rows:
+            for row_data in processed_rows:
                 try:
                     table.insert_rows([row_data])
                     inserted_count += 1
