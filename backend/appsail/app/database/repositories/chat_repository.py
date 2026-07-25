@@ -7,9 +7,13 @@ import datetime
 # Storing: question, generated query, tables touched, timestamp
 audit_logs = []
 
+# Minimal context awareness for P2
+last_interaction = {"q": "", "sql": ""}
+
 class ChatRepository:
     @staticmethod
     async def process_natural_language(question: str) -> Dict[str, Any]:
+        global last_interaction
         zcql = db.get_zcql()
         if not zcql:
             return {"answer": "ZCQL not initialized.", "query": ""}
@@ -19,6 +23,11 @@ class ChatRepository:
         try:
             # P0.2 - LLM-driven NL->SQL pipeline
             # Generate the prompt
+            
+            context_string = ""
+            if last_interaction["q"] and last_interaction["sql"]:
+                context_string = f"\nPrevious Question: {last_interaction['q']}\nPrevious SQL: {last_interaction['sql']}\nUse this context if the current question is a follow-up."
+                
             system_prompt = f"""
 You are a query-generation assistant for a police case database.
 Given a question, output ONLY a single SQL SELECT statement — no explanation, no markdown formatting.
@@ -52,7 +61,7 @@ Q: Which cases were registered in the last 6 months?
 SQL: SELECT * FROM CaseMaster WHERE CrimeRegisteredDate >= '2026-01-01'
 
 Q: Show me cases from Indiranagar police station
-SQL: SELECT CaseMaster.CrimeNo FROM CaseMaster LEFT JOIN Unit ON CaseMaster.PoliceStationID = Unit.ROWID WHERE Unit.UnitName = 'Indiranagar'
+SQL: SELECT CaseMaster.CrimeNo FROM CaseMaster LEFT JOIN Unit ON CaseMaster.PoliceStationID = Unit.ROWID WHERE Unit.UnitName = 'Indiranagar'{context_string}
 
 Only output the SQL. Never include destructive statements.
 """
@@ -149,6 +158,10 @@ Only output the SQL. Never include destructive statements.
                 "details": f"Q: {question}\nSQL: {sql_query}",
                 "tables": tables_touched
             })
+            
+            # Save context for next query
+            last_interaction["q"] = question
+            last_interaction["sql"] = sql_query
             
             return {
                 "answer": answer_text,

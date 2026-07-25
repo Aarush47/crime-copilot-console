@@ -201,7 +201,7 @@ function Chat() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-3">
+      <div id="chat-history-container" className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-3">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div className="max-w-[85%]">
@@ -608,25 +608,72 @@ function ExportReports() {
   };
   const cards = [
     {
+      id: "chat_history",
       icon: FileText,
       title: "Conversation History",
       desc: "Export current chat as a signed PDF transcript.",
     },
     {
+      id: "case_bundle",
       icon: FileDown,
       title: "Case Bundle",
       desc: "Compile the filtered case set into an investigation report.",
     },
     {
+      id: "network_snapshot",
       icon: ImgIcon,
       title: "Network Graph Snapshot",
       desc: "Export the current graph view as a high-resolution image.",
     },
   ];
-  const trigger = (name: string) => {
-    setToast(`✓ ${name} generated — ready to download`);
-    setTimeout(() => setToast(null), 2400);
+  
+  const trigger = async (id: string, name: string) => {
+    if (id === "chat_history") {
+      setToast(`Generating PDF...`);
+      try {
+        const html2canvas = (await import("html2canvas")).default;
+        const { jsPDF } = await import("jspdf");
+        
+        const chatElement = document.getElementById("chat-history-container");
+        if (!chatElement) {
+           setToast(`✗ Chat history not found! Open the chat tab first.`);
+           return;
+        }
+        
+        const canvas = await html2canvas(chatElement, {
+          backgroundColor: "#0c1013",
+          scale: 2
+        });
+        
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4"
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.setFontSize(16);
+        pdf.text("Crime Copilot - Chat Transcript", 10, 10);
+        pdf.setFontSize(10);
+        pdf.text(`Generated on: ${new Date().toLocaleString()}`, 10, 16);
+        
+        pdf.addImage(imgData, "PNG", 0, 20, pdfWidth, pdfHeight);
+        pdf.save("copilot_chat_transcript.pdf");
+        
+        setToast(`✓ ${name} downloaded successfully!`);
+      } catch (err) {
+        console.error(err);
+        setToast(`✗ Failed to generate PDF`);
+      }
+    } else {
+      setToast(`✓ ${name} generated — ready to download`);
+    }
+    setTimeout(() => setToast(null), 3000);
   };
+  
   return (
     <div className="h-full overflow-y-auto scrollbar-thin p-4 space-y-3 relative">
       <div className="rounded-md bg-[var(--color-bg-2)] border border-[var(--color-border-soft)] p-3 mb-4">
@@ -663,7 +710,7 @@ function ExportReports() {
               </div>
             </div>
             <button
-              onClick={() => trigger(c.title)}
+              onClick={() => trigger(c.id, c.title)}
               className="mt-3 w-full rounded bg-[var(--color-bg-3)] border border-[var(--color-border-default)] hover:border-[var(--color-amber-dim)] hover:text-[var(--color-amber)] text-[11.5px] font-mono uppercase tracking-wider text-[var(--color-text-mid)] py-1.5"
             >
               Export
