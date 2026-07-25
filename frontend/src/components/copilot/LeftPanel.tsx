@@ -434,24 +434,88 @@ function NetworkGraph() {
             {graphData?.nodes?.length || 0} nodes
           </div>
         </div>
-        <div className="flex-1 overflow-auto p-4 flex flex-col gap-2">
-          {/* Simple textual representation of nodes until graph rendering is implemented */}
-          {graphData?.nodes?.map((n) => (
-            <div key={n.data.id} className="text-[12px] text-[var(--color-text-hi)] border p-2 rounded border-[var(--color-border-soft)]">
-              <span className="text-[var(--color-amber)] uppercase font-mono text-[10px] mr-2">[{n.data.type}]</span>
-              {n.data.label}
+        <div className="flex-1 overflow-auto p-4 flex flex-col gap-2 relative h-[300px]">
+          {graphData && graphData.nodes.length > 0 ? (
+            <div className="absolute inset-0 overflow-hidden bg-[var(--color-bg-1)]">
+              <svg width="100%" height="100%" viewBox="-150 -150 300 300">
+                {/* Edges */}
+                {graphData.edges.map((e, idx) => {
+                  const sourceNode = graphData.nodes.find((n) => n.data.id === e.data.source);
+                  const targetNode = graphData.nodes.find((n) => n.data.id === e.data.target);
+                  if (!sourceNode || !targetNode) return null;
+                  
+                  // Compute positions (case is center, others orbit)
+                  const getPos = (n: any) => {
+                    if (n.data.type === "Case") return { x: 0, y: 0 };
+                    const i = graphData.nodes.filter(x => x.data.type !== "Case").findIndex(x => x.data.id === n.data.id);
+                    const total = graphData.nodes.length - 1 || 1;
+                    const angle = (i / total) * Math.PI * 2;
+                    const radius = 100;
+                    return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+                  };
+                  
+                  const p1 = getPos(sourceNode);
+                  const p2 = getPos(targetNode);
+                  
+                  return (
+                    <g key={`edge-${idx}`}>
+                      <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="var(--color-border-soft)" strokeWidth="1" strokeDasharray={e.data.label ? "4 2" : ""} />
+                      {e.data.label && (
+                        <text
+                          x={(p1.x + p2.x) / 2}
+                          y={(p1.y + p2.y) / 2 - 4}
+                          fill="var(--color-text-mid)"
+                          fontSize="7"
+                          textAnchor="middle"
+                          fontFamily="monospace"
+                        >
+                          {e.data.label}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+                
+                {/* Nodes */}
+                {graphData.nodes.map((n) => {
+                  const isCenter = n.data.type === "Case";
+                  const i = graphData.nodes.filter(x => x.data.type !== "Case").findIndex(x => x.data.id === n.data.id);
+                  const total = graphData.nodes.length - 1 || 1;
+                  const angle = (i / total) * Math.PI * 2;
+                  const radius = 100;
+                  const pos = isCenter ? { x: 0, y: 0 } : { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+                  
+                  let fill = "var(--color-text-lo)";
+                  if (n.data.type === "Case") fill = "#4F9B90";
+                  else if (n.data.type === "Accused" || n.data.type === "Victim") fill = "#C1584C";
+                  else fill = "#5E6C73";
+                  
+                  return (
+                    <g key={n.data.id} transform={`translate(${pos.x}, ${pos.y})`}>
+                      <circle r={isCenter ? 14 : 10} fill={fill} stroke="var(--color-bg-2)" strokeWidth="2" />
+                      <text
+                        y={isCenter ? 22 : 18}
+                        fill="var(--color-text-hi)"
+                        fontSize="9"
+                        textAnchor="middle"
+                        fontFamily="monospace"
+                      >
+                        {n.data.label}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
             </div>
-          ))}
-          {graphData?.edges?.map((e, idx) => (
-            <div key={idx} className="text-[11px] text-[var(--color-text-mid)] pl-4">
-              ↳ {e.data.source} --({e.data.label})--&gt; {e.data.target}
-            </div>
-          ))}
-          {!graphData && (
-            <div className="text-[12px] text-[var(--color-text-lo)] italic">Loading graph data...</div>
-          )}
-          {graphData?.nodes?.length === 0 && (
-            <div className="text-[12px] text-[var(--color-text-lo)] italic">No network data found for this case.</div>
+          ) : (
+            <>
+              {!graphData && (
+                <div className="text-[12px] text-[var(--color-text-lo)] italic">Loading graph data...</div>
+              )}
+              {graphData?.nodes?.length === 0 && (
+                <div className="text-[12px] text-[var(--color-text-lo)] italic">No network data found for this case.</div>
+              )}
+            </>
           )}
         </div>
         <div className="px-3 py-2 border-t border-[var(--color-border-soft)] flex items-center gap-4">
