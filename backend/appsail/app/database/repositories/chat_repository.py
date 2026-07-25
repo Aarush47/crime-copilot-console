@@ -14,34 +14,34 @@ class ChatRepository:
         try:
             if "count" in q or "how many" in q:
                 if "critical" in q:
-                    res = zcql.execute_query("SELECT count(ROWID) as count FROM cases WHERE severity = 'critical'")
-                    count = res[0].get("cases", {}).get("count", 0) if res else 0
+                    res = zcql.execute_query("SELECT count(CaseMaster.ROWID) as count FROM CaseMaster LEFT JOIN GravityOffence ON CaseMaster.GravityOffenceID = GravityOffence.ROWID WHERE GravityOffence.LookupValue = 'critical'")
+                    count = res[0].get("CaseMaster", {}).get("count", 0) if res else 0
                     return {
                         "answer": f"There are {count} critical cases currently logged in the database.",
-                        "query": "SELECT count(ROWID) FROM cases WHERE severity = 'critical'"
+                        "query": "SELECT count(CaseMaster.ROWID) FROM CaseMaster LEFT JOIN GravityOffence ON CaseMaster.GravityOffenceID = GravityOffence.ROWID WHERE GravityOffence.LookupValue = 'critical'"
                     }
                 else:
-                    res = zcql.execute_query("SELECT count(ROWID) as count FROM cases")
-                    count = res[0].get("cases", {}).get("count", 0) if res else 0
+                    res = zcql.execute_query("SELECT count(ROWID) as count FROM CaseMaster")
+                    count = res[0].get("CaseMaster", {}).get("count", 0) if res else 0
                     return {
                         "answer": f"There are {count} total FIRs currently logged in the database.",
-                        "query": "SELECT count(ROWID) FROM cases"
+                        "query": "SELECT count(ROWID) FROM CaseMaster"
                     }
             elif "district" in q:
-                res = zcql.execute_query("SELECT district, count(ROWID) as count FROM cases GROUP BY district")
-                districts = [f"{r['cases'].get('district', 'Unknown')}: {r['cases'].get('count', 0)}" for r in res]
+                res = zcql.execute_query("SELECT District.DistrictName, count(CaseMaster.ROWID) as count FROM CaseMaster LEFT JOIN Unit ON CaseMaster.PoliceStationID = Unit.ROWID LEFT JOIN District ON Unit.DistrictID = District.ROWID")
+                districts = [f"{r['District'].get('DistrictName', 'Unknown')}: {r['CaseMaster'].get('count', 0)}" for r in res if r.get('District', {}).get('DistrictName')]
                 ans = "Here is the breakdown by district: " + ", ".join(districts)
                 return {
                     "answer": ans,
-                    "query": "SELECT district, count(ROWID) FROM cases GROUP BY district"
+                    "query": "SELECT District.DistrictName, count(CaseMaster.ROWID) FROM CaseMaster LEFT JOIN Unit ON CaseMaster.PoliceStationID = Unit.ROWID LEFT JOIN District ON Unit.DistrictID = District.ROWID"
                 }
             else:
                 # Default response using real data from DB to show it's connected
-                res = zcql.execute_query("SELECT count(ROWID) as count FROM cases")
-                count = res[0].get("cases", {}).get("count", 0) if res else 0
+                res = zcql.execute_query("SELECT count(ROWID) as count FROM CaseMaster")
+                count = res[0].get("CaseMaster", {}).get("count", 0) if res else 0
                 return {
                     "answer": f"Based on our Catalyst Data Store, we have {count} active cases. Try asking 'how many critical cases' or 'breakdown by district'.",
-                    "query": "SELECT count(ROWID) FROM cases"
+                    "query": "SELECT count(ROWID) FROM CaseMaster"
                 }
         except Exception as e:
             logger.error(f"Chat DB Error: {e}")
